@@ -1,7 +1,7 @@
 # Paho-MQTT
 TEC499 - Problema 3
 
-## Para arquivo de teste
+## Para arquivo de teste (Paho)
 - Para publisher
 ````console
 gcc mqtt_pub.c -o pub -lpaho-mqtt3c -Wall
