@@ -20,3 +20,16 @@ gcc mqtt_pub.c -o pub -lpaho-mqtt3c -Wall
 gcc mqtt_sub.c -o sub -lpaho-mqtt3c -Wall
 ./sub
 ````
+
+## Tópicos
+
+- ESP
+````console
+"esp0/[D|A][0-9]"
+"esp0/cmd"
+````
+- SBC
+
+````console
+"sbc/[D|A][0-9]"
+````
