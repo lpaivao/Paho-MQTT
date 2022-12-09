@@ -41,3 +41,8 @@
 #define ANALOG_READ 0x1
 #define DIGITAL_READ 0x2
 #endif
+
+/**
+ * Comandos de configuração e controle
+*/
+#define SET_NEW_TIME 0x7

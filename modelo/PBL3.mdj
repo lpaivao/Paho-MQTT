@@ -2696,7 +2696,7 @@
 												"$ref": "AAAAAAGE9sMo6JX6gQQ="
 											},
 											"edgePosition": 1,
-											"text": "1 : sub(sbc/cmd)"
+											"text": "1 : sub(sbc/cfg)"
 										},
 										{
 											"_type": "EdgeLabelView",
@@ -3169,7 +3169,7 @@
 												"$ref": "AAAAAAGE9sA9L5W9hBA="
 											},
 											"edgePosition": 1,
-											"text": "4 : not(sbd/cmd, newTime)"
+											"text": "4 : not(sbc/cfg, newTime)"
 										},
 										{
 											"_type": "EdgeLabelView",
@@ -3748,7 +3748,7 @@
 							"signature": {
 								"$ref": "AAAAAAGE4vlhEuXG2Kw="
 							},
-							"arguments": "sbc/cmd"
+							"arguments": "sbc/cfg"
 						},
 						{
 							"_type": "UMLMessage",
@@ -3804,7 +3804,7 @@
 							"signature": {
 								"$ref": "AAAAAAGE4v3BSuXeuc4="
 							},
-							"arguments": "sbd/cmd, newTime"
+							"arguments": "sbc/cfg, newTime"
 						},
 						{
 							"_type": "UMLMessage",
