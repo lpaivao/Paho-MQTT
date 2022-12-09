@@ -2,12 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include "MQTTClient.h"
-#define ADDRESS     "tcp://localhost:1883"
-#define CLIENTID    "ExampleClientPub"
+
+#include "../topicos.h"
+#include "../nodeMCU/commands.h"
+
+#define ADDRESS     "tcp://test.mosquitto.org:1883"
+#define CLIENTID    "jacapubtimer"
 #define TOPIC       "MQTT Examples"
 #define PAYLOAD     "Hello World!"
 #define QOS         1
 #define TIMEOUT     10000L
+
+
 
 volatile MQTTClient_deliveryToken deliveredtoken;
 
@@ -55,15 +61,16 @@ int main(int argc, char* argv[])
         printf("Failed to connect, return code %d\n", rc);
         exit(EXIT_FAILURE);
     }
-    pubmsg.payload = PAYLOAD;
-    pubmsg.payloadlen = strlen(PAYLOAD);
+    char payload[] = {SET_NEW_TIME, 1, '\0'};
+    pubmsg.payload = payload;
+    pubmsg.payloadlen = 2;
     pubmsg.qos = QOS;
     pubmsg.retained = 0;
     deliveredtoken = 0;
-    MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
+    MQTTClient_publishMessage(client, SBC_CONFIG_TIME_TOPIC, &pubmsg, &token);
     printf("Waiting for publication of %s\n"
             "on topic %s for client with ClientID: %s\n",
-            PAYLOAD, TOPIC, CLIENTID);
+            payload, SBC_CONFIG_TIME_TOPIC, CLIENTID);
     while(deliveredtoken != token);
     MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);

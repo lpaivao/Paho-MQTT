@@ -31,7 +31,7 @@ char delayTime = 5;
 // Confirmação da mensagem
 void delivered(void *context, MQTTClient_deliveryToken dt)
 {
-    printf("Message with token value %d delivery confirmed\n", dt);
+    printf("[ ACK ] tkn: %d\n", dt);
     deliveredtoken = dt;
 }
 
@@ -40,19 +40,20 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
 {
     int i;
     char *payloadptr;
-    printf("[ ARV ] topic: %s msg: ", topicName);
     payloadptr = message->payload;
 
     switch (payloadptr[0])
     {
     case SET_NEW_TIME:
         delayTime = payloadptr[1];
+        printf("[ %s ] new time: %d\n", SBC_CONFIG_TIME_TOPIC, delayTime);
         break;
 
     default:
         break;
     }
 
+    printf("[ ARV ] topic: %s msg: ", topicName);
     for (i = 0; i < message->payloadlen; i++)
     {
         printf("0x%02x ", *payloadptr++);
