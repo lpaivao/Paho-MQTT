@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "MQTTClient.h"
-#define ADDRESS     "tcp://localhost:1883"
-#define CLIENTID    "ExampleClientSub"
+
+#include "../topicos.h"
+#define ADDRESS     "tcp://test.mosquitto.org:1883"
+#define CLIENTID    "jacasubtst"
 #define TOPIC       "MQTT Examples"
 #define PAYLOAD     "Hello World!"
 #define QOS         1
@@ -18,13 +20,11 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
 {
     int i;
     char* payloadptr;
-    printf("Message arrived\n");
-    printf("     topic: %s\n", topicName);
-    printf("   message: ");
+    printf("[ %s ] msg: ", topicName);
     payloadptr = message->payload;
     for(i=0; i<message->payloadlen; i++)
     {
-        putchar(*payloadptr++);
+        printf("0x%02x ", *payloadptr++);
     }
     putchar('\n');
     MQTTClient_freeMessage(&message);
@@ -53,8 +53,8 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
     printf("Subscribing to topic %s\nfor client %s using QoS%d\n\n"
-           "Press Q<Enter> to quit\n\n", TOPIC, CLIENTID, QOS);
-    MQTTClient_subscribe(client, TOPIC, QOS);
+           "Press Q<Enter> to quit\n\n", COMMAND_TO_ESP_TOPIC, CLIENTID, QOS);
+    MQTTClient_subscribe(client, COMMAND_TO_ESP_TOPIC, QOS);
     do
     {
         ch = getchar();
