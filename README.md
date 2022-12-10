@@ -2,7 +2,7 @@
 TEC499 - Problema 3
 
 
-## Para pasta paho_test_fix
+## Para pasta paho_test_fix, sbc_with_menu
 ````console
 make
 ./main
