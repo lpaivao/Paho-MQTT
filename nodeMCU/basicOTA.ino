@@ -7,6 +7,7 @@
 #include <uart.h>
 
 #include "commands.h"
+#include "../topicos.h"
 
 #define __OTA__
 
