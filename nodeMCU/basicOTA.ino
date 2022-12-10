@@ -2,12 +2,10 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-
 #include <gpio.h>
 #include <uart.h>
-
+#include <PubSubClient.h>
 #include "commands.h"
-#include "../topicos.h"
 
 #define __OTA__
 
@@ -24,6 +22,26 @@
 #else
 #define LED_PIN LED_BUILTIN
 #endif
+
+//Wifi e Broker configurações
+const char *ssid = "INTELBRAS"; 
+const char *password = "Pbl-Sistemas-Digitais"; 
+const char *mqtt_server = "10.0.0.101"; 
+const char *device_id = "esp8266";
+
+//Define Client
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+
+//Tópicos
+char* SUB_TOPIC = "/CMD/";
+char* PUBD0_TOPIC = "/D0/";
+char* PUBD1_TOPIC = "/D1/";
+char* PUBA0_TOPIC = "/A0/";
+char* PUBS_TOPIC = "/STATUS/";
+
+// Declarações de Funçoes Broker
 
 const char *ssid = STASSID;
 const char *password = STAPSK;
@@ -96,6 +114,13 @@ sensor AS0 = {
     // setDigitalSensor,
 };
 
+void reconnect(){ 
+    // Conectar ao MQTT caso não esteja conectado
+   while (!client.connected()) {
+     client.connect("esp8266")
+   }
+
+}
 void ota_startup()
 {
   // Configuração do IP fixo no roteador, se não conectado, imprime mensagem de falha
@@ -186,6 +211,9 @@ void setup()
   setupSensorMaps();
   uart_write(uart0, "\nReady\r\n", 6);
   // pinMode(14, OUTPUT);
+
+client.setServer(mqtt_server, 1883); // change port number as mentioned in your cloudmqtt console
+client.setCallback(callback);
 }
 
 char *recByte = (char *)malloc(sizeof(char) * 2);
@@ -193,6 +221,11 @@ int addr = 0;
 
 void loop()
 {
+  //Verifica se está conectado ao broker
+  if (!client.connected()) {
+    reconnect();
+  }
+
 #ifdef __OTA__
   ArduinoOTA.handle();
 #endif
@@ -208,14 +241,20 @@ void loop()
       {
       case NODE_STATUS:
         uart_write_char(uart0, NODE_NORMAL);
+        client.publish(PUBS_TOPIC, NODE_NORMAL);
+
+        
         break;
       case READ_ANALOG:
-        if (addr >= analog_sensors.installed)
+        if (addr >= analog_sensors.installed) // ??????????????????????????
         {
           break;
         }
         uart_write_char(uart0, ANALOG_READ);
+        client.publish(PUBA0_TOPIC, ANALOG_READ);
         uart_write_char(uart0, analog_sensors.sensors[addr]->read(A0));
+        client.publish(PUBA0_TOPIC, analog_sensors.sensors[addr]->read(A0));
+
         break;
       case READ_DIGITAL:
         if (addr >= digital_sensors.installed)
@@ -223,6 +262,8 @@ void loop()
           break;
         }
         uart_write_char(uart0, DIGITAL_READ);
+        client.publish(PUBD0_TOPIC, DIGITAL_READ);
+        
 #ifdef __TESTING__
         uart_write_char(uart0, digital_sensors.sensors[addr]->read(digital_sensors.sensors[addr]->pin) + '0');
 #else
