@@ -5,7 +5,10 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#include "topicos.h"
+/*Arquivo com as definições de tópicos*/
+#include "../topicos.h"
+#include "../nodeMCU/commands.h"
+
 #include "lista_encadeada.h"
 
 #define IP "tcp://test.mosquitto.org:1883" /*mudar para "tcp://10.0.0.101:1883"*/
@@ -16,17 +19,6 @@
 
 #define QOS 1
 
-/*COMANDOS DE REQUISIÇÃO*/
-#define SITUACAO_ATUAL_NODE 0x03
-#define SOLICITA_ENTRADA_ANALOGICA 0x04
-#define SOLICITA_ENTRADA_DIGITAL 0x05
-#define TOGGLE_LED 0x06
-/*COMANDOS DE RESPOSTA*/
-#define NODE_COM_PROBLEMA 0x1F
-#define NODE_FUNCIONANDO 0x00
-#define MEDIDA_ENTRADA_ANALOGICA 0x01
-#define ESTADO_ENTRADA_DIGITAL 0x02
-
 /*Variaveis para configurar mqtt*/
 MQTTClient client;
 int rc;
@@ -36,6 +28,8 @@ Lista *list_historic_A0;
 Lista *list_historic_D0;
 Lista *list_historic_D1;
 
+char delayTime = 5;
+
 void publish(MQTTClient client, char *topic, char *payload);
 
 volatile MQTTClient_deliveryToken deliveredtoken;
@@ -43,7 +37,7 @@ volatile MQTTClient_deliveryToken deliveredtoken;
 /*Confirmação da mensagem*/
 void delivered(void *context, MQTTClient_deliveryToken dt)
 {
-    printf("Message with token value %d delivery confirmed\n", dt);
+    printf("[ ACK ] tkn: %d\n", dt);
     deliveredtoken = dt;
 }
 
@@ -68,7 +62,6 @@ void add_medicao_historico(Lista *list, char payloadptr)
     }
     else
     {
-
         /*remove medicao mais antiga do historico (ultima da lista)*/
         remover(list, list->fim->valor);
         /*adiciona medicao mais nova no inicio do historico (primeira da lista)*/
@@ -94,8 +87,8 @@ void add_medicao_historico(Lista *list, char payloadptr)
     return 1;
 }*/
 
-/*Tratamento da notificação para o sbc pegar os dados dos tópicos que está inscrito, utilizada pela função MQTTClient_setCallbacks();*/
-int callback_receive_data(void *context, char *topicName, int topicLen, MQTTClient_message *message)
+/*Tratamento da notificação para o sbc pegar os dados dos tópicos que está inscrito pelo primeiro byte do payload, utilizada pela função MQTTClient_setCallbacks();*/
+int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message)
 {
     char *payloadptr;
     printf("Message arrived\n");
@@ -106,21 +99,38 @@ int callback_receive_data(void *context, char *topicName, int topicLen, MQTTClie
 
     puts(payloadptr);
 
-    if (strcmp(topicName, SENSOR_A0_TOPIC) == 0)
+    switch (payloadptr[0])
     {
+    case SET_NEW_TIME:
+        delayTime = payloadptr[1];
+        printf("[ %s ] new time: %d\n", SBC_CONFIG_TIME_TOPIC, delayTime);
+        break;
+
+    case ANALOG_READ:
         add_medicao_historico(list_historic_A0, payloadptr[1]);
-        /*printf("Medição Adicionada: %s", payloadptr[1]);*/
-    }
-    else if (strcmp(topicName, SENSOR_D0_TOPIC) == 0)
-    {
-        add_medicao_historico(list_historic_D0, payloadptr[1]);
-        /*printf("Medição Adicionada: %s", payloadptr[1]);*/
-    }
-    else if (strcmp(topicName, SENSOR_D1_TOPIC) == 0)
-        ;
-    {
-        add_medicao_historico(list_historic_D1, payloadptr[1]);
-        /*printf("Medição Adicionada: %s", payloadptr[1]);*/
+        break;
+
+    case DIGITAL_READ:
+        if (strcmp(topicName, SENSOR_D0_TOPIC) == 0)
+            add_medicao_historico(list_historic_D0, payloadptr[1]);
+        else if (strcmp(topicName, SENSOR_D1_TOPIC) == 0)
+            add_medicao_historico(list_historic_D1, payloadptr[1]);
+        break;
+
+    case NODE_NORMAL:
+        printf("Node normal\n");
+        break;
+
+    case NODE_SKIP:
+        printf("Node skip\n");
+        break;
+
+    case NODE_TROUBLE:
+        printf("Node trouble\n");
+        break;
+
+    default:
+        break;
     }
 
     MQTTClient_freeMessage(&message);
@@ -141,7 +151,8 @@ void publish(MQTTClient client, char *topic, char *payload)
     MQTTClient_message pubmsg = MQTTClient_message_initializer;
 
     pubmsg.payload = payload;
-    pubmsg.payloadlen = strlen(pubmsg.payload);
+    pubmsg.payloadlen = 2;
+    // pubmsg.payloadlen = strlen(pubmsg.payload);
     pubmsg.qos = QOS;
     pubmsg.retained = 0;
     MQTTClient_deliveryToken token;
@@ -170,7 +181,7 @@ void mqtt_config()
     conn_opts.password = PASSWORD;
 
     MQTTClient_create(&client, IP, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
-    MQTTClient_setCallbacks(client, NULL, connlost, callback_receive_data, delivered);
+    MQTTClient_setCallbacks(client, NULL, connlost, msgarrvd, delivered);
 
     rc = MQTTClient_connect(client, &conn_opts);
 
@@ -203,28 +214,28 @@ void menu_comandos()
         switch (opcao)
         {
         case 1:
-            dado[0] = SITUACAO_ATUAL_NODE;
-            dado[1] = 0;
+            dado[0] = NODE_STATUS;
+            dado[1] = 0; /*Qualquer dado para esse byte*/
             publish(client, COMMAND_TO_ESP_TOPIC, dado);
             break;
         case 2:
-            dado[0] = SOLICITA_ENTRADA_ANALOGICA;
+            dado[0] = READ_ANALOG;
             dado[1] = 0;
             publish(client, COMMAND_TO_ESP_TOPIC, dado);
             break;
         case 3:
-            dado[0] = SOLICITA_ENTRADA_DIGITAL;
+            dado[0] = READ_DIGITAL;
             dado[1] = 0;
             publish(client, COMMAND_TO_ESP_TOPIC, dado);
             break;
         case 4:
-            dado[0] = SOLICITA_ENTRADA_DIGITAL;
+            dado[0] = READ_DIGITAL;
             dado[1] = 1;
             publish(client, COMMAND_TO_ESP_TOPIC, dado);
             break;
         case 5:
-            dado[0] = TOGGLE_LED;
-            dado[1] = 0; /* Qualquer dado para esse byte*/
+            dado[0] = LED_TOGGLE;
+            dado[1] = 0; /*Qualquer dado para esse byte*/
             publish(client, COMMAND_TO_ESP_TOPIC, dado);
             break;
         case 6:
