@@ -6,6 +6,7 @@
 #define SENSOR_D1_TOPIC "esp0/D1"
 #define SENSOR_A0_TOPIC "esp0/A0"
 #define COMMAND_TO_ESP_TOPIC "esp0/cmd"
+#define STATUS_NODEMCU "esp0/status"
 
 /**
  * Tópicos relacionados ao SBC
