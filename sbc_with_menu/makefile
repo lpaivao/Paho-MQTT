@@ -1,7 +1,7 @@
 all: main
 
 main: main.o lista_encadeada.o
-	gcc -o main main.o lista_encadeada.o -lpaho-mqtt3c -Wall -pedantic
+	gcc -o main main.o lista_encadeada.o -lpaho-mqtt3c -lwiringPi -lwiringPiDev -pthread -Wall -pedantic
 
 main.o: main.c lista_encadeada.h
 	gcc -o main.o main.c -c -Wall -pedantic
