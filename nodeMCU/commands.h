@@ -23,6 +23,9 @@
 #define READ_ANALOG 0x4
 #define NODE_STATUS 0x3
 #define LED_TOGGLE 0x6
+#define REQ_HIST_DIGITAL 0x10   // Requisição de histórico de sensor digital
+#define REQ_HIST_ANALOG 0x11    // Requisição de histórico de sensor analógico
+
 #endif
 
 /**
@@ -40,9 +43,11 @@
 #define NODE_NORMAL 0x00
 #define ANALOG_READ 0x1
 #define DIGITAL_READ 0x2
+#define RESP_HIST_DIGITAL 0x12  // Resposta de uma requisição de histórico de sensor digital
+#define RESP_HIST_ANALOG 0x13   // Resposta de uma requisição de histórico de sensor analógico
 #endif
 
 /**
  * Comandos de configuração e controle
 */
-#define SET_NEW_TIME 0x7
+#define SET_NEW_TIME 0x7    // Configuração de novo tempo de log de dados automático
