@@ -8,7 +8,6 @@
 #include "commands.h"
 #include "topicos.h"
 
-
 #define __OTA__
 
 #ifndef STASSID
@@ -25,16 +24,15 @@
 #define LED_PIN LED_BUILTIN
 #endif
 
-//Wifi e Broker configurações
-const char *ssid = "INTELBRAS"; 
-const char *password = "Pbl-Sistemas-Digitais"; 
-const char *mqtt_server = "10.0.0.101"; 
+// Wifi e Broker configurações
+const char *ssid = "INTELBRAS";
+const char *password = "Pbl-Sistemas-Digitais";
+const char *mqtt_server = "10.0.0.101";
 const char *device_id = "esp8266";
 
-//Define Client
+// Define Client
 WiFiClient espClient;
 PubSubClient client(espClient);
-
 
 // Nome do ESP na rede
 const char *host = "ESP-10.0.0.109";
@@ -59,6 +57,7 @@ typedef struct
 {
   enum sensor_type type;
   int (*read)(int), last_read, pin;
+  const char *topic;
   // bool (*set)(int);
 } sensor;
 
@@ -89,6 +88,7 @@ sensor DS0 = {
     readDigitalSensor,
     0,
     D0,
+    SENSOR_D0_TOPIC
     // setDigitalSensor,
 };
 sensor DS1 = {
@@ -96,6 +96,7 @@ sensor DS1 = {
     readDigitalSensor,
     0,
     D1,
+    SENSOR_D1_TOPIC
     // setDigitalSensor,
 };
 sensor AS0 = {
@@ -103,25 +104,29 @@ sensor AS0 = {
     readAnalogSensor,
     0,
     A0,
+    SENSOR_A0_TOPIC
     // setDigitalSensor,
 };
 
-void callback(char* topic, byte* payload, unsigned int length) {
+void callback(char *topic, byte *payload, unsigned int length)
+{
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
-  for (int i = 0; i < length; i++) {
+  for (int i = 0; i < length; i++)
+  {
     Serial.print((char)payload[i]);
   }
   Serial.println();
 }
 
-void reconnect(){ 
-    // Conectar ao MQTT caso não esteja conectado
-   while (!client.connected()) {
-     client.connect("esp8266");
-   }
-
+void reconnect()
+{
+  // Conectar ao MQTT caso não esteja conectado
+  while (!client.connected())
+  {
+    client.connect("esp8266");
+  }
 }
 void ota_startup()
 {
@@ -193,9 +198,6 @@ void setupSensorMaps()
 
 bool evalAddr(int *addr, int limit)
 {
-#ifdef __TESTING__
-  *addr = *addr - '0';
-#endif
   if (*addr >= limit)
   {
     return false;
@@ -214,17 +216,20 @@ void setup()
   uart_write(uart0, "\nReady\r\n", 6);
   // pinMode(14, OUTPUT);
 
-client.setServer(mqtt_server, 1883); // change port number as mentioned in your cloudmqtt console
-client.setCallback(callback);
+  client.setServer(mqtt_server, 1883); // change port number as mentioned in your cloudmqtt console
+  client.setCallback(callback);
 
-
-char *recByte = (char *)malloc(sizeof(char) * 2);
-int addr = 0;
+  char *recByte = (char *)malloc(sizeof(char) * 2);
+  int addr = 0;
 }
+
+char msg[2];
+
 void loop()
 {
-  //Verifica se está conectado ao broker
-  if (!client.connected()) {
+  // Verifica se está conectado ao broker
+  if (!client.connected())
+  {
     reconnect();
   }
 
@@ -236,27 +241,29 @@ void loop()
     if (uart_read(uart0, recByte, 2) == 2)
     {
       addr = recByte[1];
-#ifdef __TESTING__
-      addr = addr - '0';
-#endif
+
       switch (recByte[0])
       {
       case NODE_STATUS:
         uart_write_char(uart0, NODE_NORMAL);
         client.publish(STATUS_NODEMCU, NODE_NORMAL);
 
-        
         break;
       case READ_ANALOG:
         if (addr >= analog_sensors.installed) // ??????????????????????????
         {
           break;
         }
-        uart_write_char(uart0, ANALOG_READ);
-        client.publish(SENSOR_A0_TOPIC, );
-        uart_write_char(uart0, analog_sensors.sensors[addr]->read(A0));
-   
-        client.publish(PUBA0_TOPIC, analog_sensors.sensors[addr]->read(A0));
+        // Montagem da mensagem de resposta a ser enviada
+        msg[0] = ANALOG_READ;
+        msg[1] = analog_sensors.sensors[addr]->read(A0);
+
+        // Mensagem via UART
+        uart_write_char(uart0, msg[0]);
+        uart_write_char(uart0, msg[1]);
+
+        // Mensagem via MQTT
+        client.publish(analog_sensors.sensors[addr]->topic, msg);
 
         break;
       case READ_DIGITAL:
@@ -265,14 +272,10 @@ void loop()
           break;
         }
         uart_write_char(uart0, DIGITAL_READ);
-        client.publish(SENSOR_D0_TOPIC, DIGITAL_READ);
-      }
-        
-#ifdef __TESTING__
-        uart_write_char(uart0, digital_sensors.sensors[addr]->read(digital_sensors.sensors[addr]->pin) + '0');
-#else
+        // client.publish(SENSOR_D0_TOPIC, DIGITAL_READ);
+
         uart_write_char(uart0, digital_sensors.sensors[addr]->read(digital_sensors.sensors[addr]->pin));
-#endif
+
         break;
       case LED_TOGGLE:
         if (addr >= 2)
@@ -286,19 +289,11 @@ void loop()
       case '\n':
         break;
       default:
-#ifdef __TESTING__
-        ets_uart_printf("[ NONE ] Skipping ...");
-#else
+
         uart_write_char(uart0, NODE_SKIP);
-        uart_write_char(uart0, NODE_SKIP);
-#endif
+
         break;
       }
-#ifdef __TESTING__
-      uart_write_char(uart0, '\n');
-#endif
     }
   }
-
-
-
+}
