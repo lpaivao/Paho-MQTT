@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <wiringPi.h>
 #include <pthread.h>
+
 /*Biblioteca para a IHM local*/
 #include "ihm_local.h"
 /*Arquivo com as definições de tópicos*/
@@ -55,6 +56,9 @@ int rc;
 Lista *list_historic_A0;
 Lista *list_historic_D0;
 Lista *list_historic_D1;
+/**/
+char config_tempo[3] = {1, 5, 10};
+char sensores[3] = {0, 1, 2};
 
 /*Delay*/
 char delayTime = 5;
@@ -138,20 +142,17 @@ void msgarrvd_local_node(char *topicName, MQTTClient_message *message)
     {
     case ANALOG_READ:
         add_medicao_historico(list_historic_A0, payloadptr[1]);
-        printf("Medicao adicionada: %s\n", payloadptr[1]);
         break;
 
     case DIGITAL_READ:
         if (strcmp(topicName, SENSOR_D0_TOPIC) == 0)
         {
             add_medicao_historico(list_historic_D0, payloadptr[1]);
-            printf("Medicao digital adicionada: %s\n", payloadptr[1]);
             break;
         }
         else if (strcmp(topicName, SENSOR_D0_TOPIC) == 0)
         {
             add_medicao_historico(list_historic_D1, payloadptr[1]);
-            printf("Medicao digital adicionada: %s\n", payloadptr[1]);
             break;
         }
 
@@ -282,24 +283,6 @@ void mqtt_config()
     printf("MQTT Configurado\n");
 }
 
-int main(int argc, char *argv[])
-{
-    // lcd();           /*Primeira configuração do LCD*/
-
-    mqtt_config();   /*Configuração MQTT*/
-    wiringPiSetup(); /*Configuracao do wiringPi*/
-
-    /*start_subscribe_topics(client);*/
-
-    pthread_t threadMenu, threadIHM;
-    // pthread_create(&threadMenu, NULL, menu, NULL);     // Criacao da thread para o menu
-    pthread_create(&threadIHM, NULL, IHM_Local, NULL); // Criacao da thread para o IHM Local (automatico)
-
-    MQTTClient_disconnect(client, 10000);
-    MQTTClient_destroy(&client);
-    return rc;
-}
-
 /*------------------------------------------------- TUDO RELACIONADO AO IHM LOCAL ABAIXO -------------------------------------------------*/
 
 /*Compara a combinação das chaves 3 e 4 atual com a antiga e verifica se o estado mudou*/
@@ -359,15 +342,21 @@ bool wasPressed(int button)
     return false;
 }
 
-void atualiza_historico(char comando, char numero_sensor)
+/*Faz o tratamento para mostrar no display um valor analogico*/
+void mostra_valor_analogico(char *valorAnalogico)
 {
-    char dado[2];
-    dado[0] = comando;
-    dado[1] = numero_sensor; /*Qualquer dado para esse byte*/
-    publish(client, COMMAND_TO_ESP_TOPIC, dado);
+    char buffer[20];
+    sprintf(buffer, "%d", *valorAnalogico);
+    print_lcd(buffer);
+}
+/*Faz o tratamento para mostrar no display um valor digital*/
+void mostra_valor_digital(char *estado)
+{
+    write_char(*estado + '0');
 }
 
-void visualizar_historicos(int estado, Lista *list)
+/*Funcao que percorre a lista de valores digitais do historico e mostra no display*/
+void visualizar_historico_digital(int estado, Lista *list)
 {
     int count = 0;
     No *aux = (No *)malloc(sizeof(No)); /*No auxiliar*/
@@ -385,9 +374,10 @@ void visualizar_historicos(int estado, Lista *list)
                 /*Primeiro limpa lcd*/
                 clear_lcd();
                 /*Depois mostra*/
-                print_lcd((char)count);
+                print_lcd("Medida ");
+                print_lcd(count);
                 print_lcd(": ");
-                print_lcd((char)aux->valor);
+                mostra_valor_digital((char)aux->valor);
                 count++;
                 /*Se nao for o ultimo elemento da lista, aponta para o proximo*/
                 if (count < list_len)
@@ -407,11 +397,270 @@ void visualizar_historicos(int estado, Lista *list)
     }
 }
 
-/*Thread IHM Local*/
-void *IHM_Local(void *arg)
+/*Funcao que percorre a lista de valores analogicos do historico e mostra no display*/
+void visualizar_historico_analogico(int estado, Lista *list)
 {
-    char config_tempo[3] = {1, 5, 10};
-    char sensores[3] = {0, 1, 2};
+    int count = 0;
+    No *aux = (No *)malloc(sizeof(No)); /*No auxiliar*/
+    aux = list->inicio;                 /*Ponteiro para inicio da lista*/
+    int list_len = list->tam;           /*Tamanho da lista para loop*/
+
+    int dp3, dp4;
+
+    if (list_len > 0)
+    {
+        while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+        {
+            if (wasPressed(B2))
+            {
+                /*Primeiro limpa lcd*/
+                clear_lcd();
+                /*Depois mostra*/
+                print_lcd("Medida ");
+                print_lcd(count);
+                print_lcd(": ");
+                mostra_valor_analogico((char)aux->valor);
+                count++;
+                /*Se nao for o ultimo elemento da lista, aponta para o proximo*/
+                if (count < list_len)
+                    aux = aux->proximo;
+                else
+                {
+                    aux = list->inicio;
+                    count = 0;
+                }
+            }
+        }
+    }
+    else
+    {
+        clear_lcd();
+        print_lcd("Historico vazio");
+    }
+}
+
+/*Estado do menu para visualização do historico*/
+void estado_menu_dados(int estado, int dp3, int dp4)
+{
+    print_lcd("Ver ultimas medicoes: ");
+    print_lcd("A0, D0, D1");
+    while (1)
+    {
+        /*Verifica se o estado mudou*/
+        if (state_chaged(estado, get_state_dp(dp3, dp4)))
+            break;
+        else
+        {
+            /*confirma entrada nas opcao de ver medicoes*/
+            if (wasPressed(B0))
+            {
+                int count = 0;
+                int aux = 0;
+                clear_lcd();
+                print_lcd("A0");
+                /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
+                while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+                {
+                    /*confirma entrada na configuração do tempo*/
+                    if (wasPressed(B0))
+                    {
+                        if (count == 0)
+                        {
+                            visualizar_historico_analogico(estado, list_historic_A0);
+                        }
+                        else if (count == 1)
+                        {
+                            visualizar_historico_digital(estado, list_historic_D0);
+                        }
+                        else if (count == 2)
+                        {
+                            visualizar_historicos_digital(estado, list_historic_D1);
+                        }
+                        else if (count > 2)
+                        {
+                            count = 0;
+                        }
+                        break;
+                    }
+                    /*mostra proximo sensor*/
+                    if (wasPressed(B2))
+                    {
+                        aux++;
+                        clear_lcd();
+                        if (aux == 0)
+                        {
+                            print_lcd("Historico A0");
+                        }
+                        else if (aux == 1)
+                        {
+                            print_lcd("Historico D0");
+                        }
+                        else if (aux == 2)
+                        {
+                            print_lcd("Historico D1");
+                        }
+                        if (aux > 2)
+                            aux = -1;
+                    }
+                }
+            }
+        }
+        break;
+    }
+}
+
+/*Funcao para enviar comandos para a ESP*/
+void solicitacao_para_esp(char hexaCode, char numSensor)
+{
+    char *topic = COMMAND_TO_ESP_TOPIC;
+    char *payload;
+    payload[0] = hexaCode;
+    payload[1] = numSensor;
+    publish(client, topic, payload);
+}
+
+/*Menu de solicitações para a ESP*/
+void estado_menu_solicitar(int estado, int dp3, int dp4)
+{
+    print_lcd("Solicitacoes para esp: ");
+    print_lcd("A0, D0, D1, Led Tog, Node status");
+    while (1)
+    {
+        /*Verifica se o estado mudou*/
+        if (state_chaged(estado, get_state_dp(dp3, dp4)))
+            break;
+        else
+        {
+            /*confirma entrada nas opcao de solicitar medicoes*/
+            if (wasPressed(B0))
+            {
+                int count = 0;
+                int aux = 0;
+                clear_lcd();
+                print_lcd("A0");
+                /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
+                while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+                {
+                    /*confirma entrada na configuração do tempo*/
+                    if (wasPressed(B0))
+                    {
+                        if (count == 0)
+                        {
+                            solicitacao_para_esp(READ_ANALOG, 0);
+                            print_lcd("Solicitacao: A0");
+                        }
+                        else if (count == 1)
+                        {
+                            solicitacao_para_esp(READ_DIGITAL, 0);
+                            print_lcd("Solicitacao: D0");
+                        }
+                        else if (count == 2)
+                        {
+                            solicitacao_para_esp(READ_DIGITAL, 1);
+                            print_lcd("Solicitacao: D0");
+                        }
+                        else if (count == 3)
+                        {
+                            solicitacao_para_esp(LED_TOGGLE, 0);
+                            print_lcd("Solicitacao: LED Toggle");
+                        }
+                        else if (count == 4)
+                        {
+                            solicitacao_para_esp(NODE_STATUS, 0);
+                            print_lcd("Solicitacao: Node Status");
+                        }
+                        else if (count > 4)
+                        {
+                            count = 0;
+                        }
+                        delay(1); /*mostra o pedido de atualizacao por 1 segundo*/
+                        break;
+                    }
+                    /*mostra proximo sensor*/
+                    if (wasPressed(B2))
+                    {
+                        aux++;
+                        clear_lcd();
+                        if (aux == 0)
+                        {
+                            print_lcd("Medida atual A0");
+                        }
+                        else if (aux == 1)
+                        {
+                            print_lcd("Medida atual D0");
+                        }
+                        else if (aux == 2)
+                        {
+                            print_lcd("Medida atual D1");
+                        }
+                        else if (aux == 3)
+                        {
+                            print_lcd("Led Toggle");
+                        }
+                        else if (aux == 4)
+                        {
+                            print_lcd("Node Status");
+                        }
+                        if (aux > 4)
+                            aux == -1;
+                    }
+                }
+            }
+        }
+        break;
+    }
+}
+
+/*Menu de solicitações do tempo*/
+void estado_menu_configurar(int estado, int dp3, int dp4)
+{
+    print_lcd("Configuracao de Tempo:");
+    while (1)
+    {
+        /*Verifica se o estado mudou*/
+        if (state_chaged(estado, get_state_dp(dp3, dp4)))
+            break;
+        else
+        {
+            /*confirma entrada nas opcoes de configuração do tempo*/
+            if (wasPressed(B0))
+            {
+                int count = 0;
+                clear_lcd();
+                print_lcd("Nova configuracao: ");
+                print_lcd(config_tempo[count]);
+                /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
+                while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+                {
+                    /*confirma valor de configuração do tempo*/
+                    if (wasPressed(B0))
+                    {
+                        delayTime = config_tempo[count];
+                        print_lcd("Novo valor de tempo configurado: ");
+                        print_lcd(config_tempo[count]);
+                        delay(2); /*mostra o novo valor por 2 segundos*/
+                        break;
+                    }
+                    /*verifica proximo valor de configuração do tempo*/
+                    if (wasPressed(B2))
+                    {
+                        clear_lcd();
+                        print_lcd("Nova configuracao: ");
+                        print_lcd(config_tempo[count]);
+                        if (count == 2)
+                            count == 0;
+                        count++;
+                    }
+                }
+            }
+        }
+        break;
+    }
+}
+/*Thread IHM Local*/
+void *thread_ihm_Local(void *arg)
+{
+    piHiPri(0);
     /*Definicao dos botoes e chaves como entradas*/
     pinMode(DP3, INPUT);
     pinMode(DP4, INPUT);
@@ -428,182 +677,82 @@ void *IHM_Local(void *arg)
         switch (estado)
         {
         case ESTADO_MENU_DADOS:
-            print_lcd("Ver ultimas medicoes: ");
-            print_lcd("A0, D0, D1");
-            while (1)
-            {
-                /*Verifica se o estado mudou*/
-                if (state_chaged(estado, get_state_dp(dp3, dp4)))
-                    break;
-                else
-                {
-                    /*confirma entrada nas opcao de ver medicoes*/
-                    if (wasPressed(B0))
-                    {
-                        int count = 0;
-                        int aux = 0;
-                        clear_lcd();
-                        print_lcd("A0");
-                        /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                        while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
-                        {
-                            /*confirma entrada na configuração do tempo*/
-                            if (wasPressed(B0))
-                            {
-                                if (count == 0)
-                                {
-                                    visualizar_historicos(estado, list_historic_A0);
-                                }
-                                else if (count == 1)
-                                {
-                                    visualizar_historicos(estado, list_historic_D0);
-                                }
-                                else if (count == 2)
-                                {
-                                    visualizar_historicos(estado, list_historic_D1);
-                                }
-                                break;
-                            }
-                            /*mostra proximo sensor*/
-                            if (wasPressed(B2))
-                            {
-                                aux++;
-                                clear_lcd();
-                                if (aux == 0)
-                                {
-                                    print_lcd("Historico A0");
-                                }
-                                else if (aux == 1)
-                                {
-                                    print_lcd("Historico D0");
-                                }
-                                else if (aux == 2)
-                                {
-                                    print_lcd("Historico D1");
-                                }
-                                if (aux > 2)
-                                    aux = -1;
-                            }
-                        }
-                    }
-                }
-                break;
-            }
+            estado_menu_dados(estado, dp3, dp4);
         case ESTADO_MENU_SOLICITAR:
-            print_lcd("Solicitar ultimas medicoes: ");
-            print_lcd("A0, D0, D1");
-            while (1)
-            {
-                /*Verifica se o estado mudou*/
-                if (state_chaged(estado, get_state_dp(dp3, dp4)))
-                    break;
-                else
-                {
-                    /*confirma entrada nas opcao de solicitar medicoes*/
-                    if (wasPressed(B0))
-                    {
-                        int count = 0;
-                        int aux = 0;
-                        clear_lcd();
-                        print_lcd("A0");
-                        /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                        while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
-                        {
-                            /*confirma entrada na configuração do tempo*/
-                            if (wasPressed(B0))
-                            {
-                                if (count == 0)
-                                {
-                                    atualiza_historico(READ_ANALOG, 0);
-                                    print_lcd("Historico atualizado: ");
-                                    print_lcd("A0");
-                                }
-                                else if (count == 1)
-                                {
-                                    atualiza_historico(READ_DIGITAL, 0);
-                                    print_lcd("Historico atualizado: ");
-                                    print_lcd("D0");
-                                }
-                                else if (count == 2)
-                                {
-                                    atualiza_historico(READ_DIGITAL, 1);
-                                    print_lcd("Historico atualizado: ");
-                                    print_lcd("D1");
-                                }
-                                delayMicroseconds(1000000); /*mostra o pedido de atualizacao por 1 segundo*/
-                                break;
-                            }
-                            /*mostra proximo sensor*/
-                            if (wasPressed(B2))
-                            {
-                                aux++;
-                                clear_lcd();
-                                if (aux == 0)
-                                {
-                                    print_lcd("Atualizar historico A0");
-                                }
-                                else if (aux == 1)
-                                {
-                                    print_lcd("Atualizar historico D0");
-                                }
-                                else if (aux == 2)
-                                {
-                                    print_lcd("Atualizar historico D1");
-                                }
-                                if (aux > 2)
-                                    aux == -1;
-                            }
-                        }
-                    }
-                }
-                break;
-            }
+            estado_menu_solicitar(estado, dp3, dp4);
         case ESTADO_MENU_CONFIGURAR:
-            print_lcd("Configuracao de Tempo:");
-            while (1)
-            {
-                /*Verifica se o estado mudou*/
-                if (state_chaged(estado, get_state_dp(dp3, dp4)))
-                    break;
-                else
-                {
-                    /*confirma entrada nas opcoes de configuração do tempo*/
-                    if (wasPressed(B0))
-                    {
-                        int count = 0;
-                        clear_lcd();
-                        print_lcd(config_tempo[count]);
-                        /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                        while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
-                        {
-                            /*confirma valor de configuração do tempo*/
-                            if (wasPressed(B0))
-                            {
-                                delayTime = config_tempo[count];
-                                print_lcd("Novo valor de tempo configurado: ");
-                                print_lcd(config_tempo[count]);
-                                delayMicroseconds(2000000); /*mostra o novo valor por 2 segundos*/
-                                break;
-                            }
-                            /*verifica proximo valor de configuração do tempo*/
-                            if (wasPressed(B2))
-                            {
-                                clear_lcd();
-                                print_lcd(config_tempo[count]);
-                                if (count == 2)
-                                    count == 0;
-                                count++;
-                            }
-                        }
-                    }
-                }
-                break;
-            }
+            estado_menu_configurar(estado, dp3, dp4);
         default:
-            printf("Estado invalido\n");
+            print_lcd("Estado invalido: mude as chaves para 00, 01 ou 10");
             break;
         }
         clear_lcd();
     }
-    pthread_exit(NULL);
+    // pthread_exit(NULL);
+}
+
+/*------------------------------------------------- TUDO RELACIONADO A THREAD DE LEITURA DOS SENSORES-------------------------------------------------*/
+/*Publish automatico A0*/
+void publish_medicao_A0()
+{
+    char *dado;
+    dado[0] = READ_ANALOG;
+    dado[1] = 0;
+    publish(client, COMMAND_TO_ESP_TOPIC, dado);
+}
+
+/*Publish automatico D0*/
+void publish_medicao_D0()
+{
+    char *dado;
+    dado[0] = READ_DIGITAL;
+    dado[1] = 0;
+    publish(client, COMMAND_TO_ESP_TOPIC, dado);
+}
+
+/*Publish automatico D1*/
+void publish_medicao_D1()
+{
+    char *dado;
+    dado[0] = READ_DIGITAL;
+    dado[1] = 1;
+    publish(client, COMMAND_TO_ESP_TOPIC, dado);
+}
+
+/*thread para leitura automatica do valor dos sensores*/
+void *thread_leitura_sensores(void *arg)
+{
+    piHiPri(1);
+    while (1)
+    {
+        publish_medicao_A0();
+        publish_medicao_D0();
+        publish_medicao_D1();
+        delay(delayTime);
+    }
+}
+
+/*---------------------------------------------- MAIN ----------------------------------------------*/
+
+int main(int argc, char *argv[])
+{
+    lcd();           /*Primeira configuração do LCD*/
+    mqtt_config();   /*Configuração MQTT*/
+    wiringPiSetup(); /*Configuracao do wiringPi*/
+
+    start_subscribe_topics(client); /*Faz todos os subscribes no inicio do programa*/
+
+    piThreadCreate(thread_ihm_Local);        // Criacao da thread para o IHM Local com wiringpi
+    piThreadCreate(thread_leitura_sensores); // Criacao da thread para a leitura dos sensores a cada periodo de tempo com wiringpi
+
+    while (1)
+    {
+    }
+
+    // pthread_t threadIHM;
+    // pthread_create(&threadIHM, NULL, IHM_Local, NULL); // Criacao da thread para o IHM Local (automatico)
+
+    MQTTClient_disconnect(client, 10000);
+    MQTTClient_destroy(&client);
+    return rc;
 }
