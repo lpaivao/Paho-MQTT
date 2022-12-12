@@ -61,16 +61,16 @@ int main(int argc, char* argv[])
         printf("Failed to connect, return code %d\n", rc);
         exit(EXIT_FAILURE);
     }
-    char payload[] = {SET_NEW_TIME, 1, '\0'};
+    char payload[] = {RESP_HIST_DIGITAL, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0};
     pubmsg.payload = payload;
-    pubmsg.payloadlen = 2;
+    pubmsg.payloadlen = 11;
     pubmsg.qos = QOS;
     pubmsg.retained = 0;
     deliveredtoken = 0;
-    MQTTClient_publishMessage(client, SBC_CONFIG_TIME_TOPIC, &pubmsg, &token);
+    MQTTClient_publishMessage(client, SBC_SENSOR_D0_HIST, &pubmsg, &token);
     printf("Waiting for publication of %s\n"
             "on topic %s for client with ClientID: %s\n",
-            payload, SBC_CONFIG_TIME_TOPIC, CLIENTID);
+            payload, SBC_SENSOR_D0_HIST, CLIENTID);
     while(deliveredtoken != token);
     MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);
