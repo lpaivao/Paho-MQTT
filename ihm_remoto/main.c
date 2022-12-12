@@ -111,7 +111,7 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
     printf("[ %s ] size: %d msg: ", topicName, topicLen);
     for (i = 0; i < message->payloadlen; i++)
     {
-        printf("0x%02x ", *payloadptr++);
+        printf("%d ", *payloadptr++);
     }
     putchar('\n');
     MQTTClient_freeMessage(&message);
@@ -217,28 +217,50 @@ void showData()
 void plotHist()
 {
     FILE *gnupl = popen("gnuplot -persistent", "w");
+    FILE *hisd0 = fopen("d0.dat", "w");
+    FILE *hisd1 = fopen("d1.dat", "w");
     fprintf(gnupl, "set style data steps\n");
-    fprintf(gnupl, "%s \n", "plot [-1:11] [-1:2] '-'");
+    fprintf(gnupl, "set multiplot layout 2, 1 title 'Histórico de medições digitais' font ',14'\n");
+
     for (int i = 0; i < 10; i++)
     {
-        fprintf(gnupl, "%d\n", histDigital[0][i]);
+        fprintf(hisd0, "%d \n", histDigital[0][i]);
+        fprintf(hisd1, "%d \n", histDigital[1][i]);
     }
-    fprintf(gnupl, "e\n");
+    fflush(hisd0);
+    fflush(hisd1);
 
+    fprintf(gnupl, "set title 'D0'\n");
+    fprintf(gnupl, "%s \n", "plot [-1:11] [-1:2] 'd0.dat'");
+    fprintf(gnupl, "set title 'D1'\n");
+    fprintf(gnupl, "%s \n", "plot [-1:11] [-1:2] 'd1.dat'");
+    fprintf(gnupl, "%s \n", "unset multiplot");
     fflush(gnupl);
+}
+
+void reqHist()
+{
+    char cmd[] = {REQ_HIST_ANALOG, 0x0};
+    publish(client, SBC_CONFIG_TIME_TOPIC, cmd);
+    cmd[0] = REQ_HIST_DIGITAL;
+    cmd[1] = 0x0;
+    publish(client, SBC_CONFIG_TIME_TOPIC, cmd);
+    cmd[1] = 0x1;
+    publish(client, SBC_CONFIG_TIME_TOPIC, cmd);
 }
 
 void requestHistorico()
 {
+    printf("Menu de historicos:\n1:Atualizar Históricos\n2:Exibe imprime valores\n3:Grafico dos valores\nx:Retorna ao menu principal\n");
     switch (getchar())
     {
     case '1':
-        for (int i = 0; i < 10; i++)
-        {
-            printf("%x ", histDigital[0][i]);
-        }
+        reqHist();
         break;
     case '2':
+
+        break;
+    case '3':
         plotHist();
     default:
         break;
