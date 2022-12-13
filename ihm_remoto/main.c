@@ -19,6 +19,13 @@
 
 #define QOS 1
 
+// Gaiatice de cores
+#define SOK "\033[0;32mOK\033[0m"
+#define SFAIL "\033[0;31mOK\033[0m"
+#define CGREEN "\033[0;31m"
+#define CRED "\033[0;32m"
+#define CRST "\033[0m"
+
 // Variaveis para configurar mqtt
 MQTTClient client; // cliente
 int rc;
@@ -40,7 +47,7 @@ void delivered(void *context, MQTTClient_deliveryToken dt)
 }
 
 // Manipulação dos históricos
-char histAnalog[10], histDigital[2][10];
+char histAnalog[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, histDigital[2][10] = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
 /**
  * Trata a os dados de uma mensagem de histórico de sensor analógico
@@ -171,9 +178,11 @@ void mqtt_config()
  */
 void printMainMenu()
 {
-    printf("Menu Principal\n");
+    printf("%sMenu Principal%s\n", CRED, CRST);
     printf("\t1: Dados atuais\n");
     printf("\t2: Histórico de leituras\n");
+    printf("\tq: Sair\n");
+    putchar('\n');
 }
 
 /**
@@ -254,16 +263,36 @@ void reqHist()
     publish(client, SBC_CONFIG_TIME_TOPIC, cmd);
 }
 
-void requestHistorico()
+void showHist()
 {
-    printf("Menu de historicos:\n1:Atualizar Históricos\n2:Exibe imprime valores\n3:Grafico dos valores\nx:Retorna ao menu principal\n");
+    printf("[ A0 ] ");
+    for (int i = 0; i < 10; i++)
+    {
+        printf("%d ", histAnalog[i]);
+    }
+    printf("\n[ D0 ] ");
+    for (int i = 0; i < 10; i++)
+    {
+        printf("%d ", histDigital[0][i]);
+    }
+    printf("\n[ D1 ] ");
+    for (int i = 0; i < 10; i++)
+    {
+        printf("%d ", histDigital[1][i]);
+    }
+    putchar('\n');
+}
+
+void manHistorico()
+{
+    printf("%sMenu de historicos:%s\n1:Atualizar Históricos\n2:Exibe imprime valores\n3:Grafico dos valores\nx:Retorna ao menu principal\n", CGREEN, CRST);
     switch (getchar())
     {
     case '1':
         reqHist();
         break;
     case '2':
-
+        showHist();
         break;
     case '3':
         plotHist();
@@ -271,25 +300,23 @@ void requestHistorico()
         break;
     }
     getchar();
+    putchar('\n');
 }
 
 int main(int argc, char *argv[])
 {
     printf("IHM Remoto\n");
-    printf("[    ] MQTT Startup...");
 
     mqtt_config();
+    printf("[ %s ] MQTT Startup...\n", SOK);
 
-    printf("\r[ OK\n");
-
-    printf("[    ] MQTT Subscriptions...");
     MQTTClient_subscribe(client, SENSOR_A0_TOPIC, QOS);
     MQTTClient_subscribe(client, SENSOR_D0_TOPIC, QOS);
     MQTTClient_subscribe(client, SENSOR_D1_TOPIC, QOS);
     MQTTClient_subscribe(client, SBC_SENSOR_A0_HIST, QOS);
     MQTTClient_subscribe(client, SBC_SENSOR_D0_HIST, QOS);
     MQTTClient_subscribe(client, SBC_SENSOR_D1_HIST, QOS);
-    printf("\r[ OK\n");
+    printf("[ %s ] MQTT Subscriptions...\n", SOK);
 
     while (menuOp != 'q')
     {
@@ -302,7 +329,7 @@ int main(int argc, char *argv[])
             showData();
             break;
         case '2':
-            requestHistorico();
+            manHistorico();
             break;
         default:
             break;
