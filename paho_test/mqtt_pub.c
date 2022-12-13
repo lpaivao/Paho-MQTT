@@ -6,14 +6,12 @@
 #include "../topicos.h"
 #include "../nodeMCU/commands.h"
 
-#define ADDRESS     "tcp://test.mosquitto.org:1883"
-#define CLIENTID    "jacapubtimer"
-#define TOPIC       "MQTT Examples"
-#define PAYLOAD     "Hello World!"
-#define QOS         1
-#define TIMEOUT     10000L
-
-
+#define ADDRESS "tcp://test.mosquitto.org:1883"
+#define CLIENTID "jacapubtimer"
+#define TOPIC "MQTT Examples"
+#define PAYLOAD "Hello World!"
+#define QOS 1
+#define TIMEOUT 10000L
 
 volatile MQTTClient_deliveryToken deliveredtoken;
 
@@ -25,12 +23,12 @@ void delivered(void *context, MQTTClient_deliveryToken dt)
 int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message)
 {
     int i;
-    char* payloadptr;
+    char *payloadptr;
     printf("Message arrived\n");
     printf("     topic: %s\n", topicName);
     printf("   message: ");
     payloadptr = message->payload;
-    for(i=0; i<message->payloadlen; i++)
+    for (i = 0; i < message->payloadlen; i++)
     {
         putchar(*payloadptr++);
     }
@@ -44,7 +42,7 @@ void connlost(void *context, char *cause)
     printf("\nConnection lost\n");
     printf("     cause: %s\n", cause);
 }
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     MQTTClient client;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
@@ -52,7 +50,7 @@ int main(int argc, char* argv[])
     MQTTClient_deliveryToken token;
     int rc;
     MQTTClient_create(&client, ADDRESS, CLIENTID,
-        MQTTCLIENT_PERSISTENCE_NONE, NULL);
+                      MQTTCLIENT_PERSISTENCE_NONE, NULL);
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
     MQTTClient_setCallbacks(client, NULL, connlost, msgarrvd, delivered);
@@ -61,17 +59,28 @@ int main(int argc, char* argv[])
         printf("Failed to connect, return code %d\n", rc);
         exit(EXIT_FAILURE);
     }
-    char payload[] = {SET_NEW_TIME, 1, '\0'};
+    char payload[] = {RESP_HIST_DIGITAL, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1};
+    char payloadD[] = {RESP_HIST_DIGITAL, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1};
+    char payloadA[] = {RESP_HIST_ANALOG, 10, 83, 92, 95, 90, 100, 82, 85, 50, 41};
     pubmsg.payload = payload;
-    pubmsg.payloadlen = 2;
+    pubmsg.payloadlen = 11;
     pubmsg.qos = QOS;
     pubmsg.retained = 0;
     deliveredtoken = 0;
-    MQTTClient_publishMessage(client, SBC_CONFIG_TIME_TOPIC, &pubmsg, &token);
-    printf("Waiting for publication of %s\n"
-            "on topic %s for client with ClientID: %s\n",
-            payload, SBC_CONFIG_TIME_TOPIC, CLIENTID);
-    while(deliveredtoken != token);
+    MQTTClient_publishMessage(client, SBC_SENSOR_D0_HIST, &pubmsg, &token);
+    // printf("Waiting for publication of %\n"
+    //         "on topic %s for client with ClientID: %s\n",
+    //         payload, SBC_SENSOR_D1_HIST, CLIENTID);
+    while (deliveredtoken != token)
+        ;
+    pubmsg.payload = payloadD;
+    MQTTClient_publishMessage(client, SBC_SENSOR_D1_HIST, &pubmsg, &token);
+    while (deliveredtoken != token)
+        ;
+    pubmsg.payload = payloadA;
+    MQTTClient_publishMessage(client, SBC_SENSOR_A0_HIST, &pubmsg, &token);
+    while (deliveredtoken != token)
+        ;
     MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);
     return rc;
