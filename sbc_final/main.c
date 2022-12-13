@@ -607,7 +607,7 @@ void estado_menu_solicitar(int estado, int dp3, int dp4)
                             print_lcd("Node Status");
                         }
                         if (aux > 4)
-                            aux == -1;
+                            aux = -1;
                     }
                 }
             }
@@ -642,7 +642,7 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
                     {
                         delayTime = config_tempo[count];
                         print_lcd("Novo valor de tempo configurado: ");
-                        print_lcd(config_tempo[count]);
+                        print_lcd((char)config_tempo[count]);
                         delay(2); /*mostra o novo valor por 2 segundos*/
                         break;
                     }
@@ -651,9 +651,9 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
                     {
                         clear_lcd();
                         print_lcd("Nova configuracao: ");
-                        print_lcd(config_tempo[count]);
+                        print_lcd((char)config_tempo[count]);
                         if (count == 2)
-                            count == 0;
+                            count = 0;
                         count++;
                     }
                 }
