@@ -27,8 +27,10 @@
 // Wifi e Broker configurações
 const char *ssid = "INTELBRAS";
 const char *password = "Pbl-Sistemas-Digitais";
-const char *mqtt_server = "10.0.0.101";
-const char *device_id = "esp8266";
+// const char *mqtt_server = "10.0.0.101";
+const char *mqtt_server = "test.mosquitto.org:1883";
+
+const char *device_id = "esp0109";
 
 // Define Client
 WiFiClient espClient;
@@ -107,6 +109,71 @@ sensor AS0 = {
     SENSOR_A0_TOPIC
     // setDigitalSensor,
 };
+char msg[2];
+
+void mainSwitch(char *recByte)
+{
+  addr = recByte[1];
+
+  switch (recByte[0])
+  {
+  case NODE_STATUS:
+    uart_write_char(uart0, NODE_NORMAL);
+    msg[0] = NODE_NORMAL;
+    msg[1] = NODE_NORMAL;
+    client.publish(STATUS_NODEMCU, msg);
+
+    break;
+  case READ_ANALOG:
+    if (addr >= analog_sensors.installed) // ??????????????????????????
+    {
+      break;
+    }
+    // Montagem da mensagem de resposta a ser enviada
+    msg[0] = ANALOG_READ;
+    msg[1] = analog_sensors.sensors[addr]->read(A0);
+
+    // Mensagem via UART
+    uart_write_char(uart0, msg[0]);
+    uart_write_char(uart0, msg[1]);
+
+    // Mensagem via MQTT
+    client.publish(analog_sensors.sensors[addr]->topic, msg);
+
+    break;
+  case READ_DIGITAL:
+    if (addr >= digital_sensors.installed)
+    {
+      break;
+    }
+
+    msg[0] = DIGITAL_READ;
+    msg[1] = digital_sensors.sensors[addr]->read(digital_sensors.sensors[addr]->pin);
+
+    uart_write_char(uart0, msg[0]);
+    uart_write_char(uart0, msg[1]);
+
+    client.publish(digital_sensors.sensors[addr]->topic, msg);
+
+    break;
+  case LED_TOGGLE:
+    if (addr >= 2)
+    {
+      break;
+    }
+    GPIO_OUTPUT_SET(LED_PIN, addr);
+    uart_write_char(uart0, NODE_NORMAL);
+    break;
+  case '\r':
+  case '\n':
+    break;
+  default:
+
+    uart_write_char(uart0, NODE_SKIP);
+
+    break;
+  }
+}
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -118,6 +185,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     Serial.print((char)payload[i]);
   }
   Serial.println();
+  mainSwitch((char *)payload);
 }
 
 void reconnect()
@@ -223,8 +291,6 @@ void setup()
   int addr = 0;
 }
 
-char msg[2];
-
 void loop()
 {
   // Verifica se está conectado ao broker
@@ -240,66 +306,7 @@ void loop()
   {
     if (uart_read(uart0, recByte, 2) == 2)
     {
-      addr = recByte[1];
-
-      switch (recByte[0])
-      {
-      case NODE_STATUS:
-        uart_write_char(uart0, NODE_NORMAL);
-        msg[0] = NODE_NORMAL;
-        msg[1] = NODE_NORMAL;
-        client.publish(STATUS_NODEMCU, msg);
-
-        break;
-      case READ_ANALOG:
-        if (addr >= analog_sensors.installed) // ??????????????????????????
-        {
-          break;
-        }
-        // Montagem da mensagem de resposta a ser enviada
-        msg[0] = ANALOG_READ;
-        msg[1] = analog_sensors.sensors[addr]->read(A0);
-
-        // Mensagem via UART
-        uart_write_char(uart0, msg[0]);
-        uart_write_char(uart0, msg[1]);
-
-        // Mensagem via MQTT
-        client.publish(analog_sensors.sensors[addr]->topic, msg);
-
-        break;
-      case READ_DIGITAL:
-        if (addr >= digital_sensors.installed)
-        {
-          break;
-        }
-
-        msg[0] = DIGITAL_READ;
-        msg[1] = digital_sensors.sensors[addr]->read(digital_sensors.sensors[addr]->pin);
-
-        uart_write_char(uart0, msg[0]);
-        uart_write_char(uart0, msg[1]);
-
-        client.publish(digital_sensors.sensors[addr]->topic, msg);
-
-        break;
-      case LED_TOGGLE:
-        if (addr >= 2)
-        {
-          break;
-        }
-        GPIO_OUTPUT_SET(LED_PIN, addr);
-        uart_write_char(uart0, NODE_NORMAL);
-        break;
-      case '\r':
-      case '\n':
-        break;
-      default:
-
-        uart_write_char(uart0, NODE_SKIP);
-
-        break;
-      }
+      mainSwitch(recByte);
     }
   }
 }
