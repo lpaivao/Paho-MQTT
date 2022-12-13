@@ -68,6 +68,10 @@ char delayTime = 5;
 void publish(MQTTClient client, char *topic, char *payload);
 void *IHM_Local(void *arg);
 void *IHM_Remoto(void *arg);
+int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message);
+void msgarrvd_remoto(char *topicName, MQTTClient_message *message);
+void msgarrvd_local_node(char *topicName, MQTTClient_message *message);
+
 
 volatile MQTTClient_deliveryToken deliveredtoken;
 
@@ -221,7 +225,7 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
     payloadptr = message->payload;
 
     msgarrvd_local_time_confg(topicName, message);
-    msgarrvd_local(topicName, message);
+    msgarrvd_local_node(topicName, message);
     msgarrvd_remoto(topicName, message);
 
     MQTTClient_freeMessage(&message);
@@ -475,7 +479,7 @@ void estado_menu_dados(int estado, int dp3, int dp4)
                         }
                         else if (count == 2)
                         {
-                            visualizar_historicos_digital(estado, list_historic_D1);
+                            visualizar_historico_digital(estado, list_historic_D1);
                         }
                         else if (count > 2)
                         {
