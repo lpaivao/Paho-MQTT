@@ -6,6 +6,11 @@
 #include <stdbool.h>
 #include <wiringPi.h>
 #include <pthread.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <time.h>
+#include <sys/ioctl.h>
+#include <stdint.h>
 
 /*Biblioteca para a IHM local*/
 #include "ihm_local.h"
@@ -665,7 +670,7 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
 /*Thread IHM Local*/
 void *thread_ihm_Local(void *arg)
 {
-    piHiPri(0);
+    //piHiPri(0);
     /*Definicao dos botoes e chaves como entradas*/
     pinMode(DP3, INPUT);
     pinMode(DP4, INPUT);
@@ -693,7 +698,7 @@ void *thread_ihm_Local(void *arg)
         }
         clear_lcd();
     }
-    // pthread_exit(NULL);
+    pthread_exit(NULL);
 }
 
 /*------------------------------------------------- TUDO RELACIONADO A THREAD DE LEITURA DOS SENSORES-------------------------------------------------*/
@@ -735,6 +740,7 @@ void *thread_leitura_sensores(void *arg)
         publish_medicao_D1();
         delay(delayTime);
     }
+    pthread_exit(NULL);
 }
 
 /*---------------------------------------------- MAIN ----------------------------------------------*/
@@ -747,15 +753,18 @@ int main(int argc, char *argv[])
 
     start_subscribe_topics(client); /*Faz todos os subscribes no inicio do programa*/
 
-    piThreadCreate(thread_ihm_Local);        // Criacao da thread para o IHM Local com wiringpi
-    piThreadCreate(thread_leitura_sensores); // Criacao da thread para a leitura dos sensores a cada periodo de tempo com wiringpi
+ // piThreadCreate(thread_ihm_Local);        // Criacao da thread para o IHM Local com wiringp
+//  piThreadCreate(thread_leitura_sensores); // Criacao da thread para a leitura dos sensores a cada periodo de tempo com wiringpi
 
+    pthread_t threadIHM, threadLeitura;
+    pthread_create(&threadIHM, NULL, IHM_Local, NULL); // Criacao da thread para o IHM Local (automatico)
+    pthread_create(&threadIHM, NULL, IHM_Local, NULL); // Criacao da thread para a leitura (automatico)
+    
     while (1)
     {
     }
 
-    // pthread_t threadIHM;
-    // pthread_create(&threadIHM, NULL, IHM_Local, NULL); // Criacao da thread para o IHM Local (automatico)
+
 
     MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);
