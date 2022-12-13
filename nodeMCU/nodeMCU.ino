@@ -246,7 +246,9 @@ void loop()
       {
       case NODE_STATUS:
         uart_write_char(uart0, NODE_NORMAL);
-        client.publish(STATUS_NODEMCU, NODE_NORMAL);
+        msg[0] = NODE_NORMAL;
+        msg[1] = NODE_NORMAL;
+        client.publish(STATUS_NODEMCU, msg);
 
         break;
       case READ_ANALOG:
@@ -271,10 +273,14 @@ void loop()
         {
           break;
         }
-        uart_write_char(uart0, DIGITAL_READ);
-        // client.publish(SENSOR_D0_TOPIC, DIGITAL_READ);
 
-        uart_write_char(uart0, digital_sensors.sensors[addr]->read(digital_sensors.sensors[addr]->pin));
+        msg[0] = DIGITAL_READ;
+        msg[1] = digital_sensors.sensors[addr]->read(digital_sensors.sensors[addr]->pin);
+
+        uart_write_char(uart0, msg[0]);
+        uart_write_char(uart0, msg[1]);
+
+        client.publish(digital_sensors.sensors[addr]->topic, msg);
 
         break;
       case LED_TOGGLE:
