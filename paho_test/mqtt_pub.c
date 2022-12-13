@@ -4,14 +4,18 @@
 #include "MQTTClient.h"
 
 #include "../topicos.h"
+#include "../credenciais.h"
 #include "../nodeMCU/commands.h"
 
-#define ADDRESS "tcp://test.mosquitto.org:1883"
+#define ADDRESS LABSRV_ADDR
 #define CLIENTID "jacapubtimer"
 #define TOPIC "MQTT Examples"
 #define PAYLOAD "Hello World!"
 #define QOS 1
 #define TIMEOUT 10000L
+
+#define USER "aluno"
+#define PASSWORD "@luno*123"
 
 volatile MQTTClient_deliveryToken deliveredtoken;
 
@@ -53,6 +57,9 @@ int main(int argc, char *argv[])
                       MQTTCLIENT_PERSISTENCE_NONE, NULL);
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
+    conn_opts.username = USER;     // User
+    conn_opts.password = PASSWORD; // Senha
+
     MQTTClient_setCallbacks(client, NULL, connlost, msgarrvd, delivered);
     if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
     {

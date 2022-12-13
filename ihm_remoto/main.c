@@ -8,10 +8,12 @@
 
 // Arquivo com as definições de tópicos
 #include "../topicos.h"
+#include "../credenciais.h"
 
 #include "../nodeMCU/commands.h"
 
-#define IP "test.mosquitto.org:1883" // mudar para "tcp://10.0.0.101:1883"
+// mudar para "tcp://10.0.0.101:1883"
+#define IP LABSRV_ADDR 
 
 #define CLIENTID "ihmremoto001"
 #define USER "aluno"
@@ -154,8 +156,8 @@ void mqtt_config()
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer; // initializer for connect options
     conn_opts.keepAliveInterval = 20;                                            // intervalo do KA
     conn_opts.cleansession = 1;
-    // conn_opts.username = USER;     // User
-    // conn_opts.password = PASSWORD; // Senha
+    conn_opts.username = USER;     // User
+    conn_opts.password = PASSWORD; // Senha
 
     MQTTClient_create(&client, IP, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL); // Cria o cliente para se conectar ao broker
     MQTTClient_setCallbacks(client, NULL, connlost, msgarrvd, delivered);
