@@ -219,17 +219,22 @@ void plotHist()
     FILE *gnupl = popen("gnuplot -persistent", "w");
     FILE *hisd0 = fopen("d0.dat", "w");
     FILE *hisd1 = fopen("d1.dat", "w");
-    fprintf(gnupl, "set style data steps\n");
-    fprintf(gnupl, "set multiplot layout 2, 1 title 'Histórico de medições digitais' font ',14'\n");
+    FILE *hisa0 = fopen("a0.dat", "w");
+    fprintf(gnupl, "set multiplot layout 3, 1 title 'Histórico das medições' font ',12'\n");
 
     for (int i = 0; i < 10; i++)
     {
         fprintf(hisd0, "%d \n", histDigital[0][i]);
         fprintf(hisd1, "%d \n", histDigital[1][i]);
+        fprintf(hisa0, "%d \n", histAnalog[i]);
     }
     fflush(hisd0);
     fflush(hisd1);
+    fflush(hisa0);
 
+    fprintf(gnupl, "set title 'A0'\n");
+    fprintf(gnupl, "%s \n", "plot 'a0.dat' with lines");
+    fprintf(gnupl, "set style data steps\n");
     fprintf(gnupl, "set title 'D0'\n");
     fprintf(gnupl, "%s \n", "plot [-1:11] [-1:2] 'd0.dat'");
     fprintf(gnupl, "set title 'D1'\n");

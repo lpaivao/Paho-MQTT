@@ -60,6 +60,8 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     char payload[] = {RESP_HIST_DIGITAL, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1};
+    char payloadD[] = {RESP_HIST_DIGITAL, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1};
+    char payloadA[] = {RESP_HIST_ANALOG, 10, 83, 92, 95, 90, 100, 82, 85, 50, 41};
     pubmsg.payload = payload;
     pubmsg.payloadlen = 11;
     pubmsg.qos = QOS;
@@ -71,7 +73,12 @@ int main(int argc, char *argv[])
     //         payload, SBC_SENSOR_D1_HIST, CLIENTID);
     while (deliveredtoken != token)
         ;
+    pubmsg.payload = payloadD;
     MQTTClient_publishMessage(client, SBC_SENSOR_D1_HIST, &pubmsg, &token);
+    while (deliveredtoken != token)
+        ;
+    pubmsg.payload = payloadA;
+    MQTTClient_publishMessage(client, SBC_SENSOR_A0_HIST, &pubmsg, &token);
     while (deliveredtoken != token)
         ;
     MQTTClient_disconnect(client, 10000);
