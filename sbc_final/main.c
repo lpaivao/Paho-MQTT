@@ -16,7 +16,8 @@
 #include "lista_encadeada.h"
 
 /*Constantes para confiugração do MQTT*/
-#define IP "tcp://test.mosquitto.org:1883" /*mudar para "tcp://10.0.0.101:1883"*/
+// #define IP "tcp://test.mosquitto.org:1883" /*mudar para "tcp://10.0.0.101:1883"*/
+#define IP "tcp://10.0.0.101:1883"
 #define CLIENTID "MQTTCClientID"
 #define USER "aluno"
 #define PASSWORD "@luno*123"
