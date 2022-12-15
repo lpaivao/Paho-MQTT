@@ -29,10 +29,10 @@
 #define PASSWORD "@luno*123"
 
 // Wifi e Broker configurações
-const char *ssid = "INTELBRAS";
-const char *password = "Pbl-Sistemas-Digitais";
-const char *mqtt_server = "10.0.0.101";
-// const char *mqtt_server = "test.mosquitto.org:1883";
+const char *ssid = "NANET_24";
+const char *password = "254790bi";
+// const char *mqtt_server = "10.0.0.101";
+const char *mqtt_server = "test.mosquitto.org";
 int s = 0;
 
 const char *device_id = "esp0109";
@@ -186,14 +186,15 @@ void callback(char *topic, byte *payload, unsigned int length) {
 void reconnect() {
   // Conectar ao MQTT caso não esteja conectado
   while (!client.connected()) {
-    client.connect("esp0109", USER, PASSWORD);
+    // client.connect("esp0109", USER, PASSWORD);
+    client.connect("esp0109");
   }
 }
 void ota_startup() {
   // Configuração do IP fixo no roteador, se não conectado, imprime mensagem de falha
-  if (!WiFi.config(local_IP, gateway, subnet)) {
-    ets_uart_printf("STA Failed to configure");
-  }
+  // if (!WiFi.config(local_IP, gateway, subnet)) {
+  //   ets_uart_printf("STA Failed to configure");
+  // }
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
@@ -262,20 +263,21 @@ bool evalAddr(int *addr, int limit) {
 
 void setup() {
   uart0 = uart_init(UART0, BAUDUART0, UART_8N1, 0, 1, 10, 0);
-  uart_write(uart0, "\nBooting\r\n", 6);
+  uart_write(uart0, "\nBooting\n", 6);
 #ifdef __OTA__
   ota_startup();
 #endif
   setupSensorMaps();
-  uart_write(uart0, "\nReady\r\n", 6);
+  uart_write(uart0, "\nReady\n", 6);
   // pinMode(14, OUTPUT);
 
   client.setServer(mqtt_server, 1883);  // change port number as mentioned in your cloudmqtt console
   client.setCallback(callback);
 
-  uart_write(uart0, "tentou conectar\n", 16);
-  if (client.connect("esp0109", USER, PASSWORD))
-    uart_write(uart0, "connect\n", 8);
+  uart_write(uart0, "Conexão MQTT\n", 13);
+  // if (client.connect("esp0109", USER, PASSWORD))
+  if (client.connect("esp0109"))
+    uart_write(uart0, "MQTT OK\n", 8);
 
   client.subscribe(COMMAND_TO_ESP_TOPIC);
   char msg[] = { ANALOG_READ, 56 };
@@ -288,9 +290,9 @@ void setup() {
 void loop() {
 
   // Verifica se está conectado ao broker
-  if (!client.connected()) {
-    reconnect();
-  }
+  // if (!client.connected()) {
+  //   reconnect();
+  // }
 
 #ifdef __OTA__
   ArduinoOTA.handle();
