@@ -23,6 +23,8 @@ gcc mqtt_sub.c -o sub -lpaho-mqtt3c -Wall
 
 ## Tópicos
 
+- https://learn.sparkfun.com/tutorials/raspberry-gpio/gpio-pinout
+
 - ESP
 ````console
 "esp0/[D|A][0-9]"
