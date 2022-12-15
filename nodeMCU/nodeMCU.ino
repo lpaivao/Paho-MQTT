@@ -28,13 +28,14 @@
 #define USER "aluno"
 #define PASSWORD "@luno*123"
 
+#define LABMODE
 
 #ifdef LABMODE
 // Wifi e Broker configurações
 const char *ssid = STASSID;
 const char *password = STAPSK;
 
-// const char *mqtt_server = "10.0.0.101";
+const char *mqtt_server = "10.0.0.101";
 #else
 const char *mqtt_server = "test.mosquitto.org";
 #endif
@@ -214,10 +215,13 @@ void reconnect()
 }
 void ota_startup()
 {
+#ifdef LABMODE
   // Configuração do IP fixo no roteador, se não conectado, imprime mensagem de falha
-  // if (!WiFi.config(local_IP, gateway, subnet)) {
-  //   ets_uart_printf("STA Failed to configure");
-  // }
+  if (!WiFi.config(local_IP, gateway, subnet))
+  {
+    ets_uart_printf("STA Failed to configure");
+  }
+#endif
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED)
@@ -291,21 +295,24 @@ bool evalAddr(int *addr, int limit)
 void setup()
 {
   uart0 = uart_init(UART0, BAUDUART0, UART_8N1, 0, 1, 10, 0);
-  uart_write(uart0, "\nBooting\n", 6);
+  uart_write(uart0, "\nBooting\r\n", 10);
 #ifdef __OTA__
   ota_startup();
 #endif
   setupSensorMaps();
-  uart_write(uart0, "\nReady\n", 6);
+  uart_write(uart0, "\nReady\r\n", 8);
   // pinMode(14, OUTPUT);
 
   client.setServer(mqtt_server, 1883); // change port number as mentioned in your cloudmqtt console
   client.setCallback(callback);
 
-  uart_write(uart0, "Conexão MQTT\n", 13);
-  // if (client.connect("esp0109", USER, PASSWORD))
+  uart_write(uart0, "\nConexão MQTT\n", 14);
+#ifdef LABMODE
+  if (client.connect("esp0109", USER, PASSWORD))
+#else
   if (client.connect("esp0109"))
-    uart_write(uart0, "MQTT OK\n", 8);
+#endif
+    uart_write(uart0, "\nMQTT OK\n", 9);
 
   client.subscribe(COMMAND_TO_ESP_TOPIC);
   char msg[] = {ANALOG_READ, 56};

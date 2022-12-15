@@ -10,6 +10,8 @@
 
 #include "../nodeMCU/commands.h"
 
+#define LABMODE
+
 #ifndef LABMODE
 #define IP "tcp://test.mosquitto.org:1883" // mudar para "tcp://10.0.0.101:1883"
 #else

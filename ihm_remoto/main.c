@@ -12,6 +12,8 @@
 
 #include "../nodeMCU/commands.h"
 
+#define LABMODE
+
 // mudar para "tcp://10.0.0.101:1883"
 #ifdef LABMODE
 #define IP LABSRV_ADDR
