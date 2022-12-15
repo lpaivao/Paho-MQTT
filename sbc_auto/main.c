@@ -10,7 +10,11 @@
 
 #include "../nodeMCU/commands.h"
 
+#ifndef LABMODE
 #define IP "tcp://test.mosquitto.org:1883" // mudar para "tcp://10.0.0.101:1883"
+#else
+#define IP "tcp://10.0.0.101:1883" // mudar para "tcp://10.0.0.101:1883"
+#endif
 
 #define CLIENTID "sbcauto001"
 #define USER "aluno"
@@ -103,8 +107,10 @@ void mqtt_config()
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer; // initializer for connect options
     conn_opts.keepAliveInterval = 20;                                            // intervalo do KA
     conn_opts.cleansession = 1;
-    // conn_opts.username = USER;     // User
-    // conn_opts.password = PASSWORD; // Senha
+#ifdef LABMODE
+    conn_opts.username = USER;     // User
+    conn_opts.password = PASSWORD; // Senha
+#endif
 
     MQTTClient_create(&client, IP, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL); // Cria o cliente para se conectar ao broker
     MQTTClient_setCallbacks(client, NULL, connlost, msgarrvd, delivered);
