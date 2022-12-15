@@ -13,8 +13,11 @@
 #include "../nodeMCU/commands.h"
 
 // mudar para "tcp://10.0.0.101:1883"
-#define IP LABSRV_ADDR 
-
+#ifdef LABMODE
+#define IP LABSRV_ADDR
+#else
+#define IP TESTSRV_ADDR
+#endif
 #define CLIENTID "ihmremoto001"
 #define USER "aluno"
 #define PASSWORD "@luno*123"
@@ -156,9 +159,10 @@ void mqtt_config()
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer; // initializer for connect options
     conn_opts.keepAliveInterval = 20;                                            // intervalo do KA
     conn_opts.cleansession = 1;
+#ifdef LABMODE
     conn_opts.username = USER;     // User
     conn_opts.password = PASSWORD; // Senha
-
+#endif
     MQTTClient_create(&client, IP, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL); // Cria o cliente para se conectar ao broker
     MQTTClient_setCallbacks(client, NULL, connlost, msgarrvd, delivered);
 
