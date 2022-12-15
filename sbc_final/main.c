@@ -146,7 +146,7 @@ void msgarrvd_local_node(char *topicName, MQTTClient_message *message)
     char *payloadptr;
     payloadptr = message->payload;
 
-    char *dado;
+    //char *dado;
 
     switch (payloadptr[0])
     {
@@ -188,7 +188,7 @@ void msgarrvd_remoto(char *topicName, MQTTClient_message *message)
     char *payloadptr;
     payloadptr = message->payload;
 
-    char *dado;
+    //char *dado;
 
     switch (payloadptr[0])
     {
@@ -213,7 +213,7 @@ void msgarrvd_local_time_confg(char *topicName, MQTTClient_message *message)
     char *payloadptr;
     payloadptr = message->payload;
 
-    char *dado;
+    //char *dado;
 
     if (payloadptr[0] == SET_NEW_TIME)
     {
@@ -225,9 +225,9 @@ void msgarrvd_local_time_confg(char *topicName, MQTTClient_message *message)
 /*Tratamento da notificação para o sbc pegar os dados dos tópicos que está inscrito pelo primeiro byte do payload, utilizada pela função MQTTClient_setCallbacks();*/
 int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message)
 {
-    char *payloadptr;
+    //char *payloadptr;
 
-    payloadptr = message->payload;
+    //payloadptr = message->payload;
 
     msgarrvd_local_time_confg(topicName, message);
     msgarrvd_local_node(topicName, message);
@@ -377,9 +377,9 @@ void visualizar_historico_digital(int estado, Lista *list)
 
     if (list_len > 0)
     {
-        while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+        while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
         {
-            if (wasPressed(B2))
+            if (wasPressed(BTN2))
             {
                 /*Primeiro limpa lcd*/
                 clear_lcd();
@@ -419,9 +419,9 @@ void visualizar_historico_analogico(int estado, Lista *list)
 
     if (list_len > 0)
     {
-        while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+        while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
         {
-            if (wasPressed(B2))
+            if (wasPressed(BTN2))
             {
                 /*Primeiro limpa lcd*/
                 clear_lcd();
@@ -462,17 +462,17 @@ void estado_menu_dados(int estado, int dp3, int dp4)
         else
         {
             /*confirma entrada nas opcao de ver medicoes*/
-            if (wasPressed(B0))
+            if (wasPressed(BTN0))
             {
                 int count = 0;
                 int aux = 0;
                 clear_lcd();
                 print_lcd("A0");
                 /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
                 {
                     /*confirma entrada na configuração do tempo*/
-                    if (wasPressed(B0))
+                    if (wasPressed(BTN0))
                     {
                         if (count == 0)
                         {
@@ -493,7 +493,7 @@ void estado_menu_dados(int estado, int dp3, int dp4)
                         break;
                     }
                     /*mostra proximo sensor*/
-                    if (wasPressed(B2))
+                    if (wasPressed(BTN2))
                     {
                         aux++;
                         clear_lcd();
@@ -542,17 +542,17 @@ void estado_menu_solicitar(int estado, int dp3, int dp4)
         else
         {
             /*confirma entrada nas opcao de solicitar medicoes*/
-            if (wasPressed(B0))
+            if (wasPressed(BTN0))
             {
                 int count = 0;
                 int aux = 0;
                 clear_lcd();
                 print_lcd("A0");
                 /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
                 {
                     /*confirma entrada na configuração do tempo*/
-                    if (wasPressed(B0))
+                    if (wasPressed(BTN0))
                     {
                         if (count == 0)
                         {
@@ -587,7 +587,7 @@ void estado_menu_solicitar(int estado, int dp3, int dp4)
                         break;
                     }
                     /*mostra proximo sensor*/
-                    if (wasPressed(B2))
+                    if (wasPressed(BTN2))
                     {
                         aux++;
                         clear_lcd();
@@ -633,17 +633,17 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
         else
         {
             /*confirma entrada nas opcoes de configuração do tempo*/
-            if (wasPressed(B0))
+            if (wasPressed(BTN0))
             {
                 int count = 0;
                 clear_lcd();
                 print_lcd("Nova configuracao: ");
                 print_lcd(config_tempo[count]);
                 /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                while (!wasPressed(B1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
                 {
                     /*confirma valor de configuração do tempo*/
-                    if (wasPressed(B0))
+                    if (wasPressed(BTN0))
                     {
                         delayTime = config_tempo[count];
                         print_lcd("Novo valor de tempo configurado: ");
@@ -652,7 +652,7 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
                         break;
                     }
                     /*verifica proximo valor de configuração do tempo*/
-                    if (wasPressed(B2))
+                    if (wasPressed(BTN2))
                     {
                         clear_lcd();
                         print_lcd("Nova configuracao: ");
@@ -674,9 +674,9 @@ void *thread_ihm_Local(void *arg)
     /*Definicao dos botoes e chaves como entradas*/
     pinMode(DP3, INPUT);
     pinMode(DP4, INPUT);
-    pinMode(B0, INPUT);
-    pinMode(B1, INPUT);
-    pinMode(B2, INPUT);
+    pinMode(BTN0, INPUT);
+    pinMode(BTN1, INPUT);
+    pinMode(BTN2, INPUT);
 
     int dp3 = 0, dp4 = 0; /*Variavel das chaves*/
     int estado = 0;       /*Variavel de estado*/
@@ -756,9 +756,8 @@ int main(int argc, char *argv[])
  // piThreadCreate(thread_ihm_Local);        // Criacao da thread para o IHM Local com wiringp
 //  piThreadCreate(thread_leitura_sensores); // Criacao da thread para a leitura dos sensores a cada periodo de tempo com wiringpi
 
-    pthread_t threadIHM, threadLeitura;
-    pthread_create(&threadIHM, NULL, IHM_Local, NULL); // Criacao da thread para o IHM Local (automatico)
-    pthread_create(&threadIHM, NULL, IHM_Local, NULL); // Criacao da thread para a leitura (automatico)
+    pthread_t threadIHM;
+    pthread_create(&threadIHM, NULL, thread_ihm_Local, NULL); // Criacao da thread para o IHM Local (automatico)
     
     while (1)
     {
