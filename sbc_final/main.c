@@ -310,7 +310,7 @@ void mqtt_config()
 /*------------------------------------------------- TUDO RELACIONADO AO IHM LOCAL ABAIXO -------------------------------------------------*/
 
 /*Compara a combinação das chaves 3 e 4 atual com a antiga e verifica se o estado mudou*/
-bool state_chaged(int *estadoAntigo, int estadoAtual)
+bool state_changed(int *estadoAntigo, int estadoAtual)
 {
     // if (*estadoAntigo != estadoAtual)
     // {
@@ -391,7 +391,7 @@ void visualizar_historico_digital(int estado, Lista *list)
 
     if (list_len > 0)
     {
-        while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
+        while (!wasPressed(BTN1) || !state_changed(estado, get_state_dp()))
         {
             if (wasPressed(BTN2))
             {
@@ -433,7 +433,7 @@ void visualizar_historico_analogico(int estado, Lista *list)
 
     if (list_len > 0)
     {
-        while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
+        while (!wasPressed(BTN1) || !state_changed(estado, get_state_dp()))
         {
             if (wasPressed(BTN2))
             {
@@ -470,7 +470,7 @@ void estado_menu_dados(int *estado, int dp3, int dp4)
     while (1)
     {
         /*Verifica se o estado mudou*/
-        if (state_chaged(estado, get_state_dp()))
+        if (state_changed(estado, get_state_dp()))
             break;
         else
         {
@@ -482,7 +482,7 @@ void estado_menu_dados(int *estado, int dp3, int dp4)
                 clear_lcd();
                 print_lcd("A0");
                 /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
+                while (!wasPressed(BTN1) || !state_changed(estado, get_state_dp()))
                 {
                     /*confirma entrada na configuração do tempo*/
                     if (wasPressed(BTN0))
@@ -549,7 +549,7 @@ void estado_menu_solicitar(int estado, int dp3, int dp4)
     while (1)
     {
         /*Verifica se o estado mudou*/
-        if (state_chaged(estado, get_state_dp()))
+        if (state_changed(estado, get_state_dp()))
             break;
         else
         {
@@ -561,7 +561,7 @@ void estado_menu_solicitar(int estado, int dp3, int dp4)
                 clear_lcd();
                 print_lcd("A0");
                 /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
+                while (!wasPressed(BTN1) || !state_changed(estado, get_state_dp()))
                 {
                     /*confirma entrada na configuração do tempo*/
                     if (wasPressed(BTN0))
@@ -640,7 +640,7 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
     while (1)
     {
         /*Verifica se o estado mudou*/
-        if (state_chaged(estado, get_state_dp()))
+        if (state_changed(estado, get_state_dp()))
             break;
         else
         {
@@ -654,7 +654,7 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
                 sprintf(buf, "%d", config_tempo[count]);
                 print_lcd(buf);
                 /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
+                while (!wasPressed(BTN1) || !state_changed(estado, get_state_dp()))
                 {
                     /*confirma valor de configuração do tempo*/
                     if (wasPressed(BTN0))
@@ -695,9 +695,9 @@ void *thread_ihm_Local(void *arg)
     int dp3 = 0, dp4 = 0; /*Variavel das chaves*/
     int estado = 0;       /*Variavel de estado*/
 
+    estado = get_state_dp();
     while (1)
     {
-        estado = get_state_dp();
         switch (estado)
         {
         case ESTADO_MENU_DADOS:
@@ -708,6 +708,7 @@ void *thread_ihm_Local(void *arg)
             estado_menu_configurar(&estado, dp3, dp4);
         default:
             print_lcd("ERR:sel 00,01,10");
+            state_changed(estado, get_state_dp());
             break;
         }
         clear_lcd();
@@ -770,12 +771,14 @@ int main(int argc, char *argv[])
     // piThreadCreate(thread_ihm_Local);        // Criacao da thread para o IHM Local com wiringp
     //  piThreadCreate(thread_leitura_sensores); // Criacao da thread para a leitura dos sensores a cada periodo de tempo com wiringpi
 
-    pthread_t threadIHM;
-    pthread_create(&threadIHM, NULL, thread_ihm_Local, NULL); // Criacao da thread para o IHM Local (automatico)
+    // pthread_t threadIHM;
+    // pthread_create(&threadIHM, NULL, thread_ihm_Local, NULL); // Criacao da thread para o IHM Local (automatico)
 
-    while (1)
-    {
-    }
+    thread_ihm_Local(NULL);
+
+    // while (1)
+    // {
+    // }
 
     MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);
