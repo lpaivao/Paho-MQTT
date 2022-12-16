@@ -23,7 +23,7 @@
 /*Constantes para confiugração do MQTT*/
 // #define IP "tcp://test.mosquitto.org:1883" /*mudar para "tcp://10.0.0.101:1883"*/
 #define IP "tcp://10.0.0.101:1883"
-#define CLIENTID "MQTTCClientID"
+#define CLIENTID "ihmlocalG1"
 #define USER "aluno"
 #define PASSWORD "@luno*123"
 #define QOS 1
@@ -39,6 +39,8 @@ extern void write_char(unsigned char c);
 void lcd()
 {
     memory_map();
+    init_lcd();
+    init_lcd();
     init_lcd();
     clear_lcd();
 }
@@ -59,9 +61,9 @@ void print_lcd(unsigned char c[])
 MQTTClient client;
 int rc;
 /*Variaveis de listas encadeadas para armazenar historico*/
-Lista *list_historic_A0;
-Lista *list_historic_D0;
-Lista *list_historic_D1;
+Lista list_historic_A0;
+Lista list_historic_D0;
+Lista list_historic_D1;
 /**/
 char config_tempo[3] = {1, 5, 10};
 char sensores[3] = {0, 1, 2};
@@ -76,7 +78,6 @@ void *IHM_Remoto(void *arg);
 int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message);
 void msgarrvd_remoto(char *topicName, MQTTClient_message *message);
 void msgarrvd_local_node(char *topicName, MQTTClient_message *message);
-
 
 volatile MQTTClient_deliveryToken deliveredtoken;
 
@@ -146,23 +147,23 @@ void msgarrvd_local_node(char *topicName, MQTTClient_message *message)
     char *payloadptr;
     payloadptr = message->payload;
 
-    //char *dado;
+    // char *dado;
 
     switch (payloadptr[0])
     {
     case ANALOG_READ:
-        add_medicao_historico(list_historic_A0, payloadptr[1]);
+        add_medicao_historico(&list_historic_A0, payloadptr[1]);
         break;
 
     case DIGITAL_READ:
         if (strcmp(topicName, SENSOR_D0_TOPIC) == 0)
         {
-            add_medicao_historico(list_historic_D0, payloadptr[1]);
+            add_medicao_historico(&list_historic_D0, payloadptr[1]);
             break;
         }
         else if (strcmp(topicName, SENSOR_D0_TOPIC) == 0)
         {
-            add_medicao_historico(list_historic_D1, payloadptr[1]);
+            add_medicao_historico(&list_historic_D1, payloadptr[1]);
             break;
         }
 
@@ -188,21 +189,21 @@ void msgarrvd_remoto(char *topicName, MQTTClient_message *message)
     char *payloadptr;
     payloadptr = message->payload;
 
-    //char *dado;
+    // char *dado;
 
     switch (payloadptr[0])
     {
     case REQ_HIST_ANALOG:
-        retorna_historico_para_remoto(list_historic_A0, topicName, RESP_HIST_ANALOG);
+        retorna_historico_para_remoto(&list_historic_A0, topicName, RESP_HIST_ANALOG);
         break;
     case REQ_HIST_DIGITAL:
         if (strcmp(topicName, SBC_SENSOR_D0_HIST) == 0)
         {
-            retorna_historico_para_remoto(list_historic_D0, topicName, RESP_HIST_DIGITAL);
+            retorna_historico_para_remoto(&list_historic_D0, topicName, RESP_HIST_DIGITAL);
         }
         else if (strcmp(topicName, SBC_SENSOR_D1_HIST) == 0)
         {
-            retorna_historico_para_remoto(list_historic_D1, topicName, RESP_HIST_DIGITAL);
+            retorna_historico_para_remoto(&list_historic_D1, topicName, RESP_HIST_DIGITAL);
         }
         break;
     }
@@ -213,7 +214,7 @@ void msgarrvd_local_time_confg(char *topicName, MQTTClient_message *message)
     char *payloadptr;
     payloadptr = message->payload;
 
-    //char *dado;
+    // char *dado;
 
     if (payloadptr[0] == SET_NEW_TIME)
     {
@@ -225,9 +226,9 @@ void msgarrvd_local_time_confg(char *topicName, MQTTClient_message *message)
 /*Tratamento da notificação para o sbc pegar os dados dos tópicos que está inscrito pelo primeiro byte do payload, utilizada pela função MQTTClient_setCallbacks();*/
 int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message)
 {
-    //char *payloadptr;
+    // char *payloadptr;
 
-    //payloadptr = message->payload;
+    // payloadptr = message->payload;
 
     msgarrvd_local_time_confg(topicName, message);
     msgarrvd_local_node(topicName, message);
@@ -296,20 +297,22 @@ void mqtt_config()
 /*------------------------------------------------- TUDO RELACIONADO AO IHM LOCAL ABAIXO -------------------------------------------------*/
 
 /*Compara a combinação das chaves 3 e 4 atual com a antiga e verifica se o estado mudou*/
-bool state_chaged(int estadoAntigo, int estadoAtual)
+bool state_chaged(int *estadoAntigo, int estadoAtual)
 {
-    if (estadoAntigo != estadoAtual)
-    {
-        estadoAntigo = estadoAtual;
-        return false;
-    }
-    return true;
+    // if (*estadoAntigo != estadoAtual)
+    // {
+    //     *estadoAntigo = estadoAtual;
+    //     return true;
+    // }
+    // return false;
+    return (*estadoAntigo != estadoAtual);
 }
 
 /*Verifica o estado do DIP e retorna o inteiro em decimal referente ao binário da combinação das chaves 3 e 4
 OBS: os botões possuem logica inversa!!*/
-int get_state_dp(int dp3, int dp4)
+int get_state_dp()
 {
+    int dp3, dp4;
     dp3 = digitalRead(DP3);
     dp4 = digitalRead(DP4);
     if (dp3 == 1 && dp4 == 1)
@@ -325,17 +328,16 @@ int get_state_dp(int dp3, int dp4)
 /*Para confirmar se o botão foi pressionado*/
 bool debounce(int button)
 {
-    delayMicroseconds(500);
+    // delayMicroseconds(500);
     if (digitalRead(button) == 0)
     {
         /*Enquanto o botão estiver pressionado*/
-        while (1)
-        {
-            delayMicroseconds(5000);      /*Faz uma nova leitura do botão depois de 0,005 Segundos [s]*/
-            if (digitalRead(button) == 1) /*Se o botão não estiver mais pressionado, sai do loop*/
-                break;
-        }
-        return true;
+        // while (1)
+        // {
+        delayMicroseconds(5000);      /*Faz uma nova leitura do botão depois de 0,005 Segundos [s]*/
+        if (digitalRead(button) == 0) /*Se o botão não estiver mais pressionado, sai do loop*/
+            // }
+            return true;
     }
     return false;
 }
@@ -343,13 +345,14 @@ bool debounce(int button)
 /*Verifica se o botão do argumento foi pressionado e solto*/
 bool wasPressed(int button)
 {
-    if (digitalRead(button) == 0)
-    {
-        if (debounce(button))
-            return true;
-        return false; /*Botao nao foi pressionado, alarme falso*/
-    }
-    return false;
+    return debounce(button);
+    // if (digitalRead(button) == 0)
+    // {
+    //     if (debounce(button))
+    //         return true;
+    //     return false; /*Botao nao foi pressionado, alarme falso*/
+    // }
+    // return false;
 }
 
 /*Faz o tratamento para mostrar no display um valor analogico*/
@@ -377,7 +380,7 @@ void visualizar_historico_digital(int estado, Lista *list)
 
     if (list_len > 0)
     {
-        while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+        while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
         {
             if (wasPressed(BTN2))
             {
@@ -419,7 +422,7 @@ void visualizar_historico_analogico(int estado, Lista *list)
 
     if (list_len > 0)
     {
-        while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+        while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
         {
             if (wasPressed(BTN2))
             {
@@ -450,14 +453,14 @@ void visualizar_historico_analogico(int estado, Lista *list)
 }
 
 /*Estado do menu para visualização do historico*/
-void estado_menu_dados(int estado, int dp3, int dp4)
+void estado_menu_dados(int *estado, int dp3, int dp4)
 {
     print_lcd("Ver ultimas medicoes: ");
     print_lcd("A0, D0, D1");
     while (1)
     {
         /*Verifica se o estado mudou*/
-        if (state_chaged(estado, get_state_dp(dp3, dp4)))
+        if (state_chaged(estado, get_state_dp()))
             break;
         else
         {
@@ -469,22 +472,22 @@ void estado_menu_dados(int estado, int dp3, int dp4)
                 clear_lcd();
                 print_lcd("A0");
                 /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
                 {
                     /*confirma entrada na configuração do tempo*/
                     if (wasPressed(BTN0))
                     {
                         if (count == 0)
                         {
-                            visualizar_historico_analogico(estado, list_historic_A0);
+                            visualizar_historico_analogico(estado, &list_historic_A0);
                         }
                         else if (count == 1)
                         {
-                            visualizar_historico_digital(estado, list_historic_D0);
+                            visualizar_historico_digital(estado, &list_historic_D0);
                         }
                         else if (count == 2)
                         {
-                            visualizar_historico_digital(estado, list_historic_D1);
+                            visualizar_historico_digital(estado, &list_historic_D1);
                         }
                         else if (count > 2)
                         {
@@ -510,7 +513,7 @@ void estado_menu_dados(int estado, int dp3, int dp4)
                             print_lcd("Historico D1");
                         }
                         if (aux > 2)
-                            aux = -1;
+                            aux = 0;
                     }
                 }
             }
@@ -537,7 +540,7 @@ void estado_menu_solicitar(int estado, int dp3, int dp4)
     while (1)
     {
         /*Verifica se o estado mudou*/
-        if (state_chaged(estado, get_state_dp(dp3, dp4)))
+        if (state_chaged(estado, get_state_dp()))
             break;
         else
         {
@@ -549,7 +552,7 @@ void estado_menu_solicitar(int estado, int dp3, int dp4)
                 clear_lcd();
                 print_lcd("A0");
                 /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
                 {
                     /*confirma entrada na configuração do tempo*/
                     if (wasPressed(BTN0))
@@ -628,7 +631,7 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
     while (1)
     {
         /*Verifica se o estado mudou*/
-        if (state_chaged(estado, get_state_dp(dp3, dp4)))
+        if (state_chaged(estado, get_state_dp()))
             break;
         else
         {
@@ -640,7 +643,7 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
                 print_lcd("Nova configuracao: ");
                 print_lcd(config_tempo[count]);
                 /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
-                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp(dp3, dp4)))
+                while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
                 {
                     /*confirma valor de configuração do tempo*/
                     if (wasPressed(BTN0))
@@ -670,7 +673,7 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
 /*Thread IHM Local*/
 void *thread_ihm_Local(void *arg)
 {
-    //piHiPri(0);
+    // piHiPri(0);
     /*Definicao dos botoes e chaves como entradas*/
     pinMode(DP3, INPUT);
     pinMode(DP4, INPUT);
@@ -683,15 +686,15 @@ void *thread_ihm_Local(void *arg)
 
     while (1)
     {
-        estado = get_state_dp(dp3, dp4);
+        estado = get_state_dp();
         switch (estado)
         {
         case ESTADO_MENU_DADOS:
-            estado_menu_dados(estado, dp3, dp4);
+            estado_menu_dados(&estado, dp3, dp4);
         case ESTADO_MENU_SOLICITAR:
-            estado_menu_solicitar(estado, dp3, dp4);
+            estado_menu_solicitar(&estado, dp3, dp4);
         case ESTADO_MENU_CONFIGURAR:
-            estado_menu_configurar(estado, dp3, dp4);
+            estado_menu_configurar(&estado, dp3, dp4);
         default:
             print_lcd("Estado invalido: mude as chaves para 00, 01 ou 10");
             break;
@@ -753,17 +756,15 @@ int main(int argc, char *argv[])
 
     start_subscribe_topics(client); /*Faz todos os subscribes no inicio do programa*/
 
- // piThreadCreate(thread_ihm_Local);        // Criacao da thread para o IHM Local com wiringp
-//  piThreadCreate(thread_leitura_sensores); // Criacao da thread para a leitura dos sensores a cada periodo de tempo com wiringpi
+    // piThreadCreate(thread_ihm_Local);        // Criacao da thread para o IHM Local com wiringp
+    //  piThreadCreate(thread_leitura_sensores); // Criacao da thread para a leitura dos sensores a cada periodo de tempo com wiringpi
 
     pthread_t threadIHM;
     pthread_create(&threadIHM, NULL, thread_ihm_Local, NULL); // Criacao da thread para o IHM Local (automatico)
-    
+
     while (1)
     {
     }
-
-
 
     MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);
