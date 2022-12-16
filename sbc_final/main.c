@@ -686,11 +686,11 @@ void *thread_ihm_Local(void *arg)
 {
     // piHiPri(0);
     /*Definicao dos botoes e chaves como entradas*/
-    pinMode(DP3, INPUT);
-    pinMode(DP4, INPUT);
-    pinMode(BTN0, INPUT);
-    pinMode(BTN1, INPUT);
-    pinMode(BTN2, INPUT);
+    // pinMode(DP3, INPUT);
+    // pinMode(DP4, INPUT);
+    // pinMode(BTN0, INPUT);
+    // pinMode(BTN1, INPUT);
+    // pinMode(BTN2, INPUT);
 
     int dp3 = 0, dp4 = 0; /*Variavel das chaves*/
     int estado = 0;       /*Variavel de estado*/
