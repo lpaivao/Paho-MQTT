@@ -56,6 +56,19 @@ void print_lcd(unsigned char c[])
         write_char(c[i]);
     }
 }
+
+void print_lcd_i(int number)
+{
+    char buf[10];
+    sprintf(buf, "%d", number);
+    int len = strlen(buf);
+
+    for (int i = 0; i < len; i++)
+    {
+        write_char(buf[i]);
+    }
+}
+
 /*Variaveis Globais*/
 /*Variaveis para configurar mqtt*/
 MQTTClient client;
@@ -358,9 +371,7 @@ bool wasPressed(int button)
 /*Faz o tratamento para mostrar no display um valor analogico*/
 void mostra_valor_analogico(char *valorAnalogico)
 {
-    char buffer[20];
-    sprintf(buffer, "%d", *valorAnalogico);
-    print_lcd(buffer);
+    print_lcd_i(*valorAnalogico);
 }
 /*Faz o tratamento para mostrar no display um valor digital*/
 void mostra_valor_digital(char *estado)
@@ -388,7 +399,7 @@ void visualizar_historico_digital(int estado, Lista *list)
                 clear_lcd();
                 /*Depois mostra*/
                 print_lcd("Medida ");
-                print_lcd(count);
+                print_lcd_i(count);
                 print_lcd(": ");
                 mostra_valor_digital((char)aux->valor);
                 count++;
@@ -430,7 +441,7 @@ void visualizar_historico_analogico(int estado, Lista *list)
                 clear_lcd();
                 /*Depois mostra*/
                 print_lcd("Medida ");
-                print_lcd(count);
+                print_lcd_i(count);
                 print_lcd(": ");
                 mostra_valor_analogico((char)aux->valor);
                 count++;
@@ -455,8 +466,7 @@ void visualizar_historico_analogico(int estado, Lista *list)
 /*Estado do menu para visualização do historico*/
 void estado_menu_dados(int *estado, int dp3, int dp4)
 {
-    print_lcd("Ver ultimas medicoes: ");
-    print_lcd("A0, D0, D1");
+    print_lcd("Hist");
     while (1)
     {
         /*Verifica se o estado mudou*/
@@ -502,15 +512,15 @@ void estado_menu_dados(int *estado, int dp3, int dp4)
                         clear_lcd();
                         if (aux == 0)
                         {
-                            print_lcd("Historico A0");
+                            print_lcd("H A0");
                         }
                         else if (aux == 1)
                         {
-                            print_lcd("Historico D0");
+                            print_lcd("H D0");
                         }
                         else if (aux == 2)
                         {
-                            print_lcd("Historico D1");
+                            print_lcd("H D1");
                         }
                         if (aux > 2)
                             aux = 0;
@@ -535,8 +545,7 @@ void solicitacao_para_esp(char hexaCode, char numSensor)
 /*Menu de solicitações para a ESP*/
 void estado_menu_solicitar(int estado, int dp3, int dp4)
 {
-    print_lcd("Solicitacoes para esp: ");
-    print_lcd("A0, D0, D1, Led Tog, Node status");
+    print_lcd("Req Node");
     while (1)
     {
         /*Verifica se o estado mudou*/
@@ -560,27 +569,27 @@ void estado_menu_solicitar(int estado, int dp3, int dp4)
                         if (count == 0)
                         {
                             solicitacao_para_esp(READ_ANALOG, 0);
-                            print_lcd("Solicitacao: A0");
+                            print_lcd("Req: A0");
                         }
                         else if (count == 1)
                         {
                             solicitacao_para_esp(READ_DIGITAL, 0);
-                            print_lcd("Solicitacao: D0");
+                            print_lcd("Req: D0");
                         }
                         else if (count == 2)
                         {
                             solicitacao_para_esp(READ_DIGITAL, 1);
-                            print_lcd("Solicitacao: D0");
+                            print_lcd("Req: D0");
                         }
                         else if (count == 3)
                         {
                             solicitacao_para_esp(LED_TOGGLE, 0);
-                            print_lcd("Solicitacao: LED Toggle");
+                            print_lcd("Rec: LED Toggle");
                         }
                         else if (count == 4)
                         {
                             solicitacao_para_esp(NODE_STATUS, 0);
-                            print_lcd("Solicitacao: Node Status");
+                            print_lcd("Req: Node Status");
                         }
                         else if (count > 4)
                         {
@@ -596,15 +605,15 @@ void estado_menu_solicitar(int estado, int dp3, int dp4)
                         clear_lcd();
                         if (aux == 0)
                         {
-                            print_lcd("Medida atual A0");
+                            print_lcd("A0: ");
                         }
                         else if (aux == 1)
                         {
-                            print_lcd("Medida atual D0");
+                            print_lcd("D0: ");
                         }
                         else if (aux == 2)
                         {
-                            print_lcd("Medida atual D1");
+                            print_lcd("D1: ");
                         }
                         else if (aux == 3)
                         {
@@ -627,7 +636,7 @@ void estado_menu_solicitar(int estado, int dp3, int dp4)
 /*Menu de solicitações do tempo*/
 void estado_menu_configurar(int estado, int dp3, int dp4)
 {
-    print_lcd("Configuracao de Tempo:");
+    print_lcd("Time CFG");
     while (1)
     {
         /*Verifica se o estado mudou*/
@@ -640,8 +649,10 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
             {
                 int count = 0;
                 clear_lcd();
-                print_lcd("Nova configuracao: ");
-                print_lcd(config_tempo[count]);
+                print_lcd("Nova cfg:");
+                char buf[10];
+                sprintf(buf, "%d", config_tempo[count]);
+                print_lcd(buf);
                 /*enquanto o botao de voltar nao for pressionado ou o estado do dip nao mudar, continua mostrando as opcoes*/
                 while (!wasPressed(BTN1) || !state_chaged(estado, get_state_dp()))
                 {
@@ -649,8 +660,8 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
                     if (wasPressed(BTN0))
                     {
                         delayTime = config_tempo[count];
-                        print_lcd("Novo valor de tempo configurado: ");
-                        print_lcd((char)config_tempo[count]);
+                        print_lcd("Novo time:");
+                        print_lcd_i(config_tempo[count]);
                         delay(2); /*mostra o novo valor por 2 segundos*/
                         break;
                     }
@@ -658,8 +669,8 @@ void estado_menu_configurar(int estado, int dp3, int dp4)
                     if (wasPressed(BTN2))
                     {
                         clear_lcd();
-                        print_lcd("Nova configuracao: ");
-                        print_lcd((char)config_tempo[count]);
+                        print_lcd("Nova cfg:");
+                        print_lcd_i(config_tempo[count]);
                         if (count == 2)
                             count = 0;
                         count++;
@@ -696,7 +707,7 @@ void *thread_ihm_Local(void *arg)
         case ESTADO_MENU_CONFIGURAR:
             estado_menu_configurar(&estado, dp3, dp4);
         default:
-            print_lcd("Estado invalido: mude as chaves para 00, 01 ou 10");
+            print_lcd("ERR:sel 00,01,10");
             break;
         }
         clear_lcd();
