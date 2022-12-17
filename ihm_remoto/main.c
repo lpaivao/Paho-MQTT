@@ -271,6 +271,17 @@ void reqHist()
     publish(client, SBC_CONFIG_TIME_TOPIC, cmd);
 }
 
+void setTimer()
+{
+    printf("Novo tempo (dentro do intervalo [1:254] segundos):\n");
+    int buf;
+    scanf("%d", &buf);
+    cmd[0] = SET_NEW_TIME;
+    cmd[1] = (unsigned char)buf;
+
+    publish(client, SBC_CONFIG_TIME_TOPIC, cmd);
+}
+
 void showHist()
 {
     printf("[ A0 ] ");
@@ -337,6 +348,9 @@ int main(int argc, char *argv[])
             showData();
             break;
         case '2':
+            setTimer();
+            break;
+        case '3':
             manHistorico();
             break;
         default:
