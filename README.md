@@ -18,7 +18,7 @@ A interface homem-máquina implementa através de uma máquina de estados menus 
 		</p>
 	</div>
  
- - Menu principal
+ #### Menu principal
  <div id="image11" style="display: inline_block" align="center">
 		<img src="/modelo/Diagrama de estados/menus.png"/><br>
 		<p>
@@ -26,7 +26,7 @@ A interface homem-máquina implementa através de uma máquina de estados menus 
 		</p>
 	</div> 
  
- - Menu para histórico
+ #### Menu para histórico
  
  <div id="image11" style="display: inline_block" align="center">
 		<img src="/modelo/Diagrama de estados/menu historico.png"/><br>
@@ -41,7 +41,7 @@ A interface homem-máquina implementa através de uma máquina de estados menus 
 		Diagrama de estados do histórico
 		</p>
 	</div>
-  - Menu de solicitações ao Node
+ #### Menu de solicitações ao Node
  <div id="image11" style="display: inline_block" align="center">
 		<img src="/modelo/Diagrama de estados/menu solicitacoes.png"/><br>
 		<p>
@@ -57,7 +57,7 @@ A interface homem-máquina implementa através de uma máquina de estados menus 
 	</div>
  
  
-  - Menu de confiurações de tempo
+ #### Menu de confiurações de tempo
  <div id="image11" style="display: inline_block" align="center">
 		<img src="/modelo/Diagrama de estados/menu tempo.png"/><br>
 		<p>
@@ -65,10 +65,10 @@ A interface homem-máquina implementa através de uma máquina de estados menus 
 		</p>
 	</div>
  
-    <div id="image11" style="display: inline_block" align="center">
+  <div id="image11" style="display: inline_block" align="center">
 		<img src="/modelo/Diagrama de estados/estados_botoes_time.png"/><br>
 		<p>
-		Diagrama de estados da configuração de tempo
+		Diagrama de estados de configuração de tempo
 		</p>
 	</div>
 ## Dependências de bibliotecas
