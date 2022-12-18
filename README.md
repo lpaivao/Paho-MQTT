@@ -10,15 +10,15 @@ TEC499 - Problema 3
 ### Máquina de estados
 A interface homem-máquina implementa através de uma máquina de estados menus que servem para a navegação do usuário por dois botões e um DIP switch. Os tópicos a seguir mostram essa relação e como mudar os estados da máquina.
 
-- Definição de entradas
+- Definição de entradas ----------------------------------------------------------------------------------- -----------------------------------------------------------------------------------
 <div id="image11" style="display: inline_block" align="center">
 		<img src="/modelo/Diagrama de estados/funcionalidades.png"/><br>
 		<p>
 		Entradas IHM local
 		</p>
 	</div>
- 
- #### Menu principal
+  
+ - Menu principal ----------------------------------------------------------------------------------- -----------------------------------------------------------------------------------
  <div id="image11" style="display: inline_block" align="center">
 		<img src="/modelo/Diagrama de estados/menus.png"/><br>
 		<p>
@@ -26,7 +26,7 @@ A interface homem-máquina implementa através de uma máquina de estados menus 
 		</p>
 	</div> 
  
- #### Menu para histórico
+- Menu para histórico ----------------------------------------------------------------------------------- -----------------------------------------------------------------------------------
  
  <div id="image11" style="display: inline_block" align="center">
 		<img src="/modelo/Diagrama de estados/menu historico.png"/><br>
@@ -41,7 +41,7 @@ A interface homem-máquina implementa através de uma máquina de estados menus 
 		Diagrama de estados do histórico
 		</p>
 	</div>
- #### Menu de solicitações ao Node
+- Menu de solicitações ao Node ----------------------------------------------------------------------------------- -----------------------------------------------------------------------------------
  <div id="image11" style="display: inline_block" align="center">
 		<img src="/modelo/Diagrama de estados/menu solicitacoes.png"/><br>
 		<p>
@@ -57,7 +57,7 @@ A interface homem-máquina implementa através de uma máquina de estados menus 
 	</div>
  
  
- #### Menu de confiurações de tempo
+- Menu de confiurações de tempo ----------------------------------------------------------------------------------- -----------------------------------------------------------------------------------
  <div id="image11" style="display: inline_block" align="center">
 		<img src="/modelo/Diagrama de estados/menu tempo.png"/><br>
 		<p>
@@ -71,6 +71,7 @@ A interface homem-máquina implementa através de uma máquina de estados menus 
 		Diagrama de estados de configuração de tempo
 		</p>
 	</div>
+	
 ## Dependências de bibliotecas
 
 ### WiringPi
