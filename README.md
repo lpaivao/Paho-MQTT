@@ -1,37 +1,42 @@
 # Paho-MQTT
 TEC499 - Problema 3
 
+- [Sérgio Pugliesi](github.com/ShinJaca)
+- [Lucas de Paiva](github.com/lpaivao)
+- [Adriel Oliveira](github.com/Pegasus77-Adriel)
+## Dependências de bibliotecas
 
-## Para pasta paho_test_fix, sbc_with_menu
-````console
+### WiringPi
+- Documentação: https://github.com/WiringPi/WiringPi
+- Como instalar: https://github.com/WiringPi/WiringPi/blob/master/INSTALL
+- Relação de pinagem: - https://learn.sparkfun.com/tutorials/raspberry-gpio/gpio-pinout
+### Paho MQTT
+- Documentação: https://github.com/eclipse/paho.mqtt.c
+- Como instalar:
+ ````console
 make
-./main
+sudo make install
 ````
 
-## Para pasta paho_test
-- Para publisher
-````console
-gcc mqtt_pub.c -o pub -lpaho-mqtt3c -Wall
-./pub
+## Como rodar os programas
+
+
+### IHM remoto (pasta ihm_remoto)
+ ````console
+make
+sudo ./remote
 ````
+### IHM Local (escolher uma das pastas)
 
-- Para subscriber
-````console
-gcc mqtt_sub.c -o sub -lpaho-mqtt3c -Wall
-./sub
+#### Para pasta sbc_final
+ ````console
+make
+sudo ./main
 ````
-
-## Tópicos
-
-- https://learn.sparkfun.com/tutorials/raspberry-gpio/gpio-pinout
-
-- ESP
-````console
-"esp0/[D|A][0-9]"
-"esp0/cmd"
+#### Para pasta sbc_auto
+ ````console
+make
+sudo ./main
 ````
-- SBC
-
-````console
-"sbc/[D|A][0-9]"
-````
+### Node (pasta nodeMCU)
+- Enviar código para a ESP8266 através do ArduinoIDE
